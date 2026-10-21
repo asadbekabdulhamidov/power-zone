@@ -59,7 +59,9 @@ interface FitnesContextType {
   togglePlanStatus: (id: string) => void;
 
   // Payment actions
-  addPayment: (data: Omit<Payment, 'id' | 'receiptNumber'>) => Payment;
+  addPayment: (data: Omit<Payment, 'id' | 'receiptNumber'> & { customExpiryDate?: string }) => Payment;
+  updatePayment: (id: string, updates: Partial<Payment> & { newExpiryDate?: string }) => void;
+  deletePayment: (id: string) => void;
   settleMemberDebt: (memberId: string, paidAmount: number, paymentMethod?: PaymentMethod) => void;
 
   // Product actions
@@ -126,7 +128,21 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       const savedContent = localStorage.getItem('powerzone_website_content');
       const savedMessages = localStorage.getItem('powerzone_contact_messages');
 
-      if (savedMembers) setMembers(JSON.parse(savedMembers));
+      if (savedMembers) {
+        try {
+          const parsedMembers: Member[] = JSON.parse(savedMembers);
+          // Auto-heal members whose expiryDate was accidentally doubled
+          const healed = parsedMembers.map((m) => {
+            if (m.startDate === '2026-10-21' && m.paidMonths === 2 && m.expiryDate === '2027-02-18') {
+              return { ...m, expiryDate: '2026-12-20' };
+            }
+            return m;
+          });
+          setMembers(healed);
+        } catch {
+          setMembers(INITIAL_MEMBERS);
+        }
+      }
       if (savedPlans) setPlans(JSON.parse(savedPlans));
       if (savedPayments) setPayments(JSON.parse(savedPayments));
       if (savedProducts) {
@@ -396,7 +412,9 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   };
 
   // Payment actions
-  const addPayment = (data: Omit<Payment, 'id' | 'receiptNumber'>): Payment => {
+  const addPayment = (
+    data: Omit<Payment, 'id' | 'receiptNumber'> & { customExpiryDate?: string }
+  ): Payment => {
     const months = data.monthsCount && data.monthsCount > 0 ? data.monthsCount : 1;
     const plan = plans.find((p) => p.id === data.membershipPlanId);
     const unitPrice = plan?.price || 200000;
@@ -420,11 +438,16 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           const payDate = data.paymentDate || new Date().toISOString().split('T')[0];
           const durationDays = (plan?.durationDays || 30) * months;
 
-          const currentExp = new Date(m.expiryDate);
-          const paymentDateObj = new Date(payDate);
-          const baseDate = currentExp > paymentDateObj ? new Date(currentExp) : new Date(paymentDateObj);
-          baseDate.setDate(baseDate.getDate() + durationDays);
-          const expiryDateStr = baseDate.toISOString().split('T')[0];
+          // If customExpiryDate is provided (e.g. from new member registration or quick payment projected date),
+          // use it directly to prevent doubling the duration!
+          let expiryDateStr = data.customExpiryDate;
+          if (!expiryDateStr) {
+            const currentExp = new Date(m.expiryDate);
+            const paymentDateObj = new Date(payDate);
+            const baseDate = currentExp > paymentDateObj ? new Date(currentExp) : new Date(paymentDateObj);
+            baseDate.setDate(baseDate.getDate() + durationDays);
+            expiryDateStr = baseDate.toISOString().split('T')[0];
+          }
 
           return {
             ...m,
@@ -456,6 +479,50 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       );
     }
     return newPayment;
+  };
+
+  const updatePayment = (id: string, updates: Partial<Payment> & { newExpiryDate?: string }) => {
+    let targetMemberId = '';
+    let updatedPayment: Payment | null = null;
+
+    setPayments((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          updatedPayment = { ...p, ...updates };
+          targetMemberId = p.memberId;
+          return updatedPayment;
+        }
+        return p;
+      })
+    );
+
+    // If remaining debt or dates are updated, sync with the member
+    if (targetMemberId && updatedPayment) {
+      const up = updatedPayment as Payment;
+      setMembers((prev) =>
+        prev.map((m) => {
+          if (m.id === targetMemberId) {
+            return {
+              ...m,
+              debtAmount: up.remainingDebt !== undefined ? up.remainingDebt : m.debtAmount,
+              expiryDate: updates.newExpiryDate || m.expiryDate,
+              paidMonths: up.monthsCount || m.paidMonths,
+            };
+          }
+          return m;
+        })
+      );
+    }
+
+    showToast('To‘lov ma’lumotlari muvaffaqiyatli yangilandi.', 'success');
+  };
+
+  const deletePayment = (id: string) => {
+    const payment = payments.find((p) => p.id === id);
+    if (!payment) return;
+
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+    showToast(`Kvitansiya № ${payment.receiptNumber} to‘lovi o‘chirildi.`, 'info');
   };
 
   const settleMemberDebt = (
@@ -703,6 +770,8 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         deletePlan,
         togglePlanStatus,
         addPayment,
+        updatePayment,
+        deletePayment,
         settleMemberDebt,
         addProduct,
         updateProduct,

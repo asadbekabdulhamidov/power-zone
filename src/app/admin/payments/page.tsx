@@ -12,23 +12,68 @@ import {
   Dumbbell,
   AlertTriangle,
   Clock,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
-import { Payment } from '@/types';
-import { formatUZS, formatDateUz, formatPhoneNumber } from '@/lib/utils';
+import { Payment, PaymentMethod } from '@/types';
+import { formatUZS, formatDateUz, formatPhoneNumber, parseNumericInput } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function PaymentsPage() {
-  const { payments, members, stats } = useFitnesFlow();
+  const { payments, members, stats, updatePayment, deletePayment } = useFitnesFlow();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [isNewPaymentModalOpen, setIsNewPaymentModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
+
+  // Edit payment states
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [editAmount, setEditAmount] = useState<number | ''>(0);
+  const [editMethod, setEditMethod] = useState<PaymentMethod>('cash');
+  const [editDate, setEditDate] = useState<string>('');
+  const [editMonths, setEditMonths] = useState<number>(1);
+  const [editDebt, setEditDebt] = useState<number | ''>(0);
+  const [editNotes, setEditNotes] = useState<string>('');
+
+  // Delete payment state
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
+
+  const handleOpenEdit = (p: Payment) => {
+    setEditingPayment(p);
+    setEditAmount(p.amount);
+    setEditMethod(p.paymentMethod);
+    setEditDate(p.paymentDate.split('T')[0]);
+    setEditMonths(p.monthsCount || 1);
+    setEditDebt(p.remainingDebt !== undefined ? p.remainingDebt : 0);
+    setEditNotes(p.notes || '');
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+
+    const numAmount = editAmount === '' ? 0 : Number(editAmount);
+    const numDebt = editDebt === '' ? 0 : Number(editDebt);
+
+    updatePayment(editingPayment.id, {
+      amount: numAmount,
+      paymentMethod: editMethod,
+      paymentDate: editDate,
+      monthsCount: editMonths,
+      remainingDebt: numDebt,
+      notes: editNotes.trim() || undefined,
+    });
+
+    setEditingPayment(null);
+  };
 
   // Filtered payments
   const filteredPayments = useMemo(() => {
@@ -197,7 +242,7 @@ export default function PaymentsPage() {
               <TableHead>Qarz Qoldig‘i</TableHead>
               <TableHead>To‘lov Usuli</TableHead>
               <TableHead>Sana</TableHead>
-              <TableHead className="text-right">Kvitansiya</TableHead>
+              <TableHead className="text-right">Amallar</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -256,15 +301,34 @@ export default function PaymentsPage() {
                   {formatDateUz(payment.paymentDate)}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedReceipt(payment)}
-                    className="h-8 px-2.5 text-xs border-zinc-700 hover:border-lime-500/50"
-                  >
-                    <Receipt className="w-3.5 h-3.5 mr-1 text-lime-400" />
-                    <span>Ko‘rish</span>
-                  </Button>
+                  <div className="inline-flex items-center gap-1.5 justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedReceipt(payment)}
+                      className="h-8 px-2 text-xs border-zinc-700 hover:border-lime-500/50"
+                      title="Kvitansiya ko‘rish va chop etish"
+                    >
+                      <Receipt className="w-3.5 h-3.5 mr-1 text-lime-400" />
+                      <span className="hidden sm:inline">Kvitansiya</span>
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(payment)}
+                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      title="To‘lovni tahrirlash"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentToDelete(payment)}
+                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors cursor-pointer"
+                      title="To‘lovni o‘chirish"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -455,6 +519,167 @@ export default function PaymentsPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* EDIT PAYMENT MODAL */}
+      {editingPayment && (
+        <Modal
+          isOpen={!!editingPayment}
+          onClose={() => setEditingPayment(null)}
+          title="To‘lovni Tahrirlash"
+          description="Noto‘g‘ri kiritilgan summa, to‘lov usuli yoki qarz qoldig‘ini to‘g‘rilang."
+          maxWidth="md"
+        >
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            {/* Payment Summary Badge */}
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Mijoz:</span>
+                <span className="font-bold text-white">
+                  {editingPayment.memberName} ({formatPhoneNumber(editingPayment.memberPhone)})
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Kvitansiya №:</span>
+                <span className="font-mono text-lime-400 font-bold">{editingPayment.receiptNumber}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Tarif:</span>
+                <span className="text-zinc-200">{editingPayment.membershipPlanName}</span>
+              </div>
+            </div>
+
+            <Input
+              label="To‘langan Summa (UZS)"
+              type="number"
+              value={editAmount}
+              onChange={(e) => setEditAmount(parseNumericInput(e.target.value))}
+              min={0}
+              step={5000}
+              required
+              helperText={`Formatlangan: ${formatUZS(editAmount)}`}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label="To‘lov Usuli"
+                options={[
+                  { label: 'Naqd pul (Cash)', value: 'cash' },
+                  { label: 'Terminal / Karta', value: 'card' },
+                  { label: 'Click', value: 'click' },
+                  { label: 'Payme', value: 'payme' },
+                  { label: 'Boshqa', value: 'other' },
+                ]}
+                value={editMethod}
+                onChange={(e) => setEditMethod(e.target.value as PaymentMethod)}
+              />
+
+              <Input
+                label="To‘lov Sanasi"
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label="To‘lov Muddati (oylar)"
+                options={[
+                  { label: '1 oy (30 kun)', value: '1' },
+                  { label: '2 oy (60 kun)', value: '2' },
+                  { label: '3 oy (90 kun)', value: '3' },
+                  { label: '6 oy (180 kun)', value: '6' },
+                  { label: '12 oy (360 kun)', value: '12' },
+                ]}
+                value={String(editMonths)}
+                onChange={(e) => setEditMonths(Number(e.target.value) || 1)}
+              />
+
+              <Input
+                label="Qoldiq Qarz (UZS)"
+                type="number"
+                value={editDebt}
+                onChange={(e) => setEditDebt(parseNumericInput(e.target.value))}
+                min={0}
+                step={5000}
+                helperText={
+                  Number(editDebt) > 0
+                    ? `Mijozda ${formatUZS(editDebt)} qarz qoladi`
+                    : 'To‘liq to‘langan (0 UZS qarz)'
+                }
+              />
+            </div>
+
+            <Input
+              label="Izoh (ixtiyoriy)"
+              placeholder="Masalan: Summadagi xatolik to‘g‘rilandi"
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+            />
+
+            <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingPayment(null)}
+              >
+                Bekor qilish
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                O‘zgarishlarni Saqlash
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* DELETE PAYMENT CONFIRMATION MODAL */}
+      {paymentToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!paymentToDelete}
+          onClose={() => setPaymentToDelete(null)}
+          onConfirm={() => {
+            if (paymentToDelete) {
+              deletePayment(paymentToDelete.id);
+              setPaymentToDelete(null);
+            }
+          }}
+          title="To‘lovni O‘chirish"
+          description="Haqiqatan ham ushbu to‘lov kvitansiyasini tizimdan butunlay o‘chirmoqchimisiz?"
+          itemType="To‘lov Kvitansiyasi"
+          itemName={`№ ${paymentToDelete.receiptNumber}`}
+          itemDetails={
+            <div className="space-y-1.5 text-xs text-zinc-300">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Mijoz:</span>
+                <span className="font-bold text-white">{paymentToDelete.memberName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">To‘langan summa:</span>
+                <span className="font-extrabold text-lime-400 text-sm">
+                  {formatUZS(paymentToDelete.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Tarif / Muddat:</span>
+                <span className="text-zinc-200">
+                  {paymentToDelete.membershipPlanName} ({paymentToDelete.monthsCount || 1} oy)
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">To‘lov sanasi va usuli:</span>
+                <span className="text-zinc-200">
+                  {formatDateUz(paymentToDelete.paymentDate)} • {paymentToDelete.paymentMethod.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          }
+          warningText="Ushbu to‘lov o‘chirilgach, uning moliyaviy yozuvi bekor qilinadi."
+          confirmText="Ha, to‘lovni o‘chirish"
+        />
       )}
     </div>
   );

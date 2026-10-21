@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
-import { Member, MemberStatus, PaymentMethod } from '@/types';
+import { Member, MemberStatus, PaymentMethod, Payment } from '@/types';
 import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference, parseNumericInput } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
@@ -60,6 +60,8 @@ export default function MembersPage() {
     deleteMember,
     recordMemberVisit,
     addPayment,
+    updatePayment,
+    deletePayment,
   } = useFitnesFlow();
 
   // Search & Filter state
@@ -119,6 +121,63 @@ export default function MembersPage() {
     () => members.reduce((sum, m) => sum + (m.debtAmount || 0), 0),
     [members]
   );
+
+  // Synchronized viewing member to prevent stale modal data
+  const activeViewingMember = useMemo(() => {
+    if (!viewingMember) return null;
+    return members.find((m) => m.id === viewingMember.id) || viewingMember;
+  }, [members, viewingMember]);
+
+  // Payment editing & deleting states
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [editPayAmount, setEditPayAmount] = useState<number | ''>(0);
+  const [editPayMethod, setEditPayMethod] = useState<PaymentMethod>('cash');
+  const [editPayDate, setEditPayDate] = useState<string>('');
+  const [editPayMonths, setEditPayMonths] = useState<number>(1);
+  const [editPayDebt, setEditPayDebt] = useState<number | ''>(0);
+  const [editPayNotes, setEditPayNotes] = useState<string>('');
+  const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
+
+  const handleOpenEditPayment = (p: Payment) => {
+    setEditingPayment(p);
+    setEditPayAmount(p.amount);
+    setEditPayMethod(p.paymentMethod);
+    setEditPayDate(p.paymentDate ? p.paymentDate.split('T')[0] : '');
+    setEditPayMonths(p.monthsCount || 1);
+    const m = members.find((mem) => mem.id === p.memberId);
+    setEditPayDebt(p.remainingDebt !== undefined ? p.remainingDebt : (m?.debtAmount ?? 0));
+    setEditPayNotes(p.notes || '');
+  };
+
+  const handleEditPaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+
+    const amountNum = Number(editPayAmount) || 0;
+    const debtNum = Number(editPayDebt) || 0;
+    const monthsNum = Number(editPayMonths) || 1;
+
+    // Calculate updated expiry date based on member's startDate and monthsNum if needed
+    const m = members.find((mem) => mem.id === editingPayment.memberId);
+    let newExpiryDate: string | undefined = undefined;
+    if (m && m.startDate) {
+      const base = new Date(m.startDate);
+      base.setDate(base.getDate() + monthsNum * 30);
+      newExpiryDate = base.toISOString().split('T')[0];
+    }
+
+    updatePayment(editingPayment.id, {
+      amount: amountNum,
+      paymentMethod: editPayMethod,
+      paymentDate: editPayDate || editingPayment.paymentDate,
+      monthsCount: monthsNum,
+      remainingDebt: debtNum,
+      notes: editPayNotes,
+      newExpiryDate,
+    });
+
+    setEditingPayment(null);
+  };
 
   // Camera helpers
   const startCamera = async (isEdit = false) => {
@@ -368,6 +427,7 @@ export default function MembersPage() {
           initialDebt > 0
             ? `Ro‘yxatdan o‘tishda qisman to‘lov (${months} oy). Qarz: ${formatUZS(initialDebt)}`
             : `Ro‘yxatdan o‘tishda to‘liq to‘lov (${months} oy)`,
+        customExpiryDate: expiryDateStr,
       });
     }
 
@@ -1322,9 +1382,9 @@ export default function MembersPage() {
       )}
 
       {/* MEMBER DETAIL VIEW MODAL */}
-      {viewingMember && (
+      {activeViewingMember && (
         <Modal
-          isOpen={!!viewingMember}
+          isOpen={!!activeViewingMember}
           onClose={() => setViewingMember(null)}
           title="A’zo Profili va Tafsilotlari"
           maxWidth="xl"
@@ -1335,52 +1395,52 @@ export default function MembersPage() {
               <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-zinc-700 shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={viewingMember.photoUrl}
-                  alt={viewingMember.fullName}
+                  src={activeViewingMember.photoUrl}
+                  alt={activeViewingMember.fullName}
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-white">
-                    {viewingMember.fullName}
+                    {activeViewingMember.fullName}
                   </h3>
-                  <Badge status={viewingMember.status}>
-                    {viewingMember.status.toUpperCase()}
+                  <Badge status={activeViewingMember.status}>
+                    {activeViewingMember.status.toUpperCase()}
                   </Badge>
                 </div>
                 <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
                   <Phone className="w-3.5 h-3.5 text-lime-400" />
-                  <span>{formatPhoneNumber(viewingMember.phone)}</span>
+                  <span>{formatPhoneNumber(activeViewingMember.phone)}</span>
                 </p>
 
                 {/* Telegram & Instagram buttons */}
-                {(viewingMember.telegramUsername || viewingMember.instagramUsername) && (
+                {(activeViewingMember.telegramUsername || activeViewingMember.instagramUsername) && (
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    {viewingMember.telegramUsername && (
+                    {activeViewingMember.telegramUsername && (
                       <a
-                        href={`https://t.me/${viewingMember.telegramUsername.replace(/^@/, '')}`}
+                        href={`https://t.me/${activeViewingMember.telegramUsername.replace(/^@/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-950/70 border border-sky-500/40 text-xs font-bold text-sky-400 hover:bg-sky-900/80 transition-colors"
                         title="Telegramda xabar yozish"
                       >
                         <Send className="w-3.5 h-3.5" />
-                        <span>Telegram: {viewingMember.telegramUsername}</span>
+                        <span>Telegram: {activeViewingMember.telegramUsername}</span>
                         <ExternalLink className="w-3 h-3 text-sky-400/70" />
                       </a>
                     )}
 
-                    {viewingMember.instagramUsername && (
+                    {activeViewingMember.instagramUsername && (
                       <a
-                        href={`https://instagram.com/${viewingMember.instagramUsername.replace(/^@/, '')}`}
+                        href={`https://instagram.com/${activeViewingMember.instagramUsername.replace(/^@/, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-950/70 border border-pink-500/40 text-xs font-bold text-pink-400 hover:bg-pink-900/80 transition-colors"
                         title="Instagram profilini ko‘rish"
                       >
                         <InstagramIcon className="w-3.5 h-3.5" />
-                        <span>Instagram: @{viewingMember.instagramUsername.replace(/^@/, '')}</span>
+                        <span>Instagram: @{activeViewingMember.instagramUsername.replace(/^@/, '')}</span>
                         <ExternalLink className="w-3 h-3 text-pink-400/70" />
                       </a>
                     )}
@@ -1388,13 +1448,13 @@ export default function MembersPage() {
                 )}
 
                 <div className="text-xs text-zinc-500 mt-2">
-                  A’zo bo‘lgan sana: {formatDateUz(viewingMember.createdAt)}
+                  A’zo bo‘lgan sana: {formatDateUz(activeViewingMember.createdAt)}
                 </div>
               </div>
             </div>
 
             {/* DEBT BANNER IF MEMBER HAS OUTSTANDING BALANCE */}
-            {viewingMember.debtAmount && viewingMember.debtAmount > 0 ? (
+            {activeViewingMember.debtAmount && activeViewingMember.debtAmount > 0 ? (
               <div className="p-4 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-rose-900/60 border border-rose-700 flex items-center justify-center text-rose-400 shrink-0">
@@ -1405,7 +1465,7 @@ export default function MembersPage() {
                       To‘lanmagan Qarz Mavjud
                     </div>
                     <div className="text-xl font-black text-white">
-                      {formatUZS(viewingMember.debtAmount)}
+                      {formatUZS(activeViewingMember.debtAmount)}
                     </div>
                     <p className="text-[11px] text-rose-300/80">
                       Mijoz to‘lov summasidan kam pul bergan va hisobida qarz qolgan.
@@ -1417,7 +1477,7 @@ export default function MembersPage() {
                   size="sm"
                   variant="primary"
                   onClick={() => {
-                    const memberId = viewingMember.id;
+                    const memberId = activeViewingMember.id;
                     setViewingMember(null);
                     setPaymentModalMemberId(memberId);
                   }}
@@ -1445,7 +1505,7 @@ export default function MembersPage() {
                     Amaldagi Tarif
                   </span>
                   <div className="text-base font-bold text-white">
-                    {viewingMember.membershipPlanName}
+                    {activeViewingMember.membershipPlanName}
                   </div>
                 </div>
                 <div className="text-right">
@@ -1453,17 +1513,17 @@ export default function MembersPage() {
                     Kelishilgan Narx (Tarixiy)
                   </span>
                   <div className="text-base font-black text-lime-400">
-                    {formatUZS(viewingMember.membershipPriceAgreed)}
+                    {formatUZS(activeViewingMember.membershipPriceAgreed)}
                   </div>
                 </div>
               </div>
 
               {/* Attendance rule alert */}
-              {viewingMember.accessType === 'weekly_3_days' && (
+              {activeViewingMember.accessType === 'weekly_3_days' && (
                 <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-600/30 text-amber-300 text-xs flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
-                    <span className="font-semibold">Haftasiga 3 kun qoidasi:</span> Ushbu tarifda a’zo haftaning istalgan 3 kunini tanlashi mumkin. Bu haftada: {viewingMember.visitsThisWeek}/3 kun qayd etilgan.
+                    <span className="font-semibold">Haftasiga 3 kun qoidasi:</span> Ushbu tarifda a’zo haftaning istalgan 3 kunini tanlashi mumkin. Bu haftada: {activeViewingMember.visitsThisWeek}/3 kun qayd etilgan.
                   </div>
                 </div>
               )}
@@ -1471,28 +1531,33 @@ export default function MembersPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-800 text-xs">
                 <div>
                   <span className="text-zinc-500">Boshlanish:</span>
-                  <p className="font-semibold text-zinc-200">{formatDateUz(viewingMember.startDate)}</p>
+                  <p className="font-semibold text-zinc-200">{formatDateUz(activeViewingMember.startDate)}</p>
                 </div>
                 <div>
                   <span className="text-zinc-500">Tugash:</span>
-                  <p className="font-semibold text-zinc-200">{formatDateUz(viewingMember.expiryDate)}</p>
+                  <p className="font-semibold text-zinc-200">{formatDateUz(activeViewingMember.expiryDate)}</p>
                 </div>
                 <div>
                   <span className="text-zinc-500">Bu haftadagi tashrif:</span>
-                  <p className="font-semibold text-lime-400">{viewingMember.visitsThisWeek} marta</p>
+                  <p className="font-semibold text-lime-400">{activeViewingMember.visitsThisWeek} marta</p>
                 </div>
                 <div>
                   <span className="text-zinc-500">Jami tashriflar:</span>
-                  <p className="font-semibold text-zinc-200">{viewingMember.totalVisits} marta</p>
+                  <p className="font-semibold text-zinc-200">{activeViewingMember.totalVisits} marta</p>
                 </div>
               </div>
             </div>
 
             {/* Member's payment history */}
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                A’zoning To‘lovlar Tarixi
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                  A’zoning To‘lovlar Tarixi
+                </h4>
+                <span className="text-[11px] text-zinc-500 font-medium">
+                  {payments.filter((p) => p.memberId === activeViewingMember.id).length} ta to‘lov
+                </span>
+              </div>
               <div className="rounded-xl border border-zinc-800 overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -1501,22 +1566,50 @@ export default function MembersPage() {
                       <TableHead>Kvitansiya</TableHead>
                       <TableHead>Summa</TableHead>
                       <TableHead>Usuli</TableHead>
+                      <TableHead className="text-right">Amallar</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {payments
-                      .filter((p) => p.memberId === viewingMember.id)
+                      .filter((p) => p.memberId === activeViewingMember.id)
                       .map((p) => (
                         <TableRow key={p.id}>
                           <TableCell className="text-xs">{formatDateUz(p.paymentDate)}</TableCell>
                           <TableCell className="text-xs font-mono text-zinc-400">{p.receiptNumber}</TableCell>
-                          <TableCell className="text-xs font-bold text-lime-400">{formatUZS(p.amount)}</TableCell>
+                          <TableCell className="text-xs font-bold text-lime-400">
+                            {formatUZS(p.amount)}
+                            {p.monthsCount && p.monthsCount > 1 ? (
+                              <span className="block text-[10px] font-normal text-zinc-400">
+                                ({p.monthsCount} oy)
+                              </span>
+                            ) : null}
+                          </TableCell>
                           <TableCell className="text-xs uppercase text-zinc-300">{p.paymentMethod}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditPayment(p)}
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                                title="To‘lovni tahrirlash"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPaymentToDelete(p)}
+                                className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
+                                title="To‘lovni o‘chirish"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
-                    {payments.filter((p) => p.memberId === viewingMember.id).length === 0 && (
+                    {payments.filter((p) => p.memberId === activeViewingMember.id).length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-4 text-xs text-zinc-500">
+                        <TableCell colSpan={5} className="text-center py-4 text-xs text-zinc-500">
                           To‘lovlar tarixi topilmadi.
                         </TableCell>
                       </TableRow>
@@ -1532,7 +1625,7 @@ export default function MembersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => recordMemberVisit(viewingMember.id)}
+                  onClick={() => recordMemberVisit(activeViewingMember.id)}
                 >
                   <Dumbbell className="w-3.5 h-3.5" />
                   <span>Tashrifni qayd etish (+1)</span>
@@ -1541,7 +1634,7 @@ export default function MembersPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    const toDel = viewingMember;
+                    const toDel = activeViewingMember;
                     setViewingMember(null);
                     setMemberToDelete(toDel);
                   }}
@@ -1558,7 +1651,7 @@ export default function MembersPage() {
                   variant="primary"
                   size="sm"
                   onClick={() => {
-                    const id = viewingMember.id;
+                    const id = activeViewingMember.id;
                     setViewingMember(null);
                     setPaymentModalMemberId(id);
                   }}
@@ -1577,6 +1670,166 @@ export default function MembersPage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* EDIT PAYMENT MODAL */}
+      {editingPayment && (
+        <Modal
+          isOpen={!!editingPayment}
+          onClose={() => setEditingPayment(null)}
+          title="To‘lovni Tahrirlash"
+          description="Noto‘g‘ri kiritilgan summa, to‘lov usuli yoki qarz qoldig‘ini to‘g‘rilang."
+          maxWidth="md"
+        >
+          <form onSubmit={handleEditPaymentSubmit} className="space-y-4">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Mijoz:</span>
+                <span className="font-bold text-white">
+                  {editingPayment.memberName} ({formatPhoneNumber(editingPayment.memberPhone)})
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Kvitansiya №:</span>
+                <span className="font-mono text-lime-400 font-bold">{editingPayment.receiptNumber}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-zinc-400">Tarif:</span>
+                <span className="text-zinc-200">{editingPayment.membershipPlanName}</span>
+              </div>
+            </div>
+
+            <Input
+              label="To‘langan Summa (UZS)"
+              type="number"
+              value={editPayAmount}
+              onChange={(e) => setEditPayAmount(parseNumericInput(e.target.value))}
+              min={0}
+              step={5000}
+              required
+              helperText={`Formatlangan: ${formatUZS(editPayAmount)}`}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label="To‘lov Usuli"
+                options={[
+                  { label: 'Naqd pul (Cash)', value: 'cash' },
+                  { label: 'Terminal / Karta', value: 'card' },
+                  { label: 'Click', value: 'click' },
+                  { label: 'Payme', value: 'payme' },
+                  { label: 'Boshqa', value: 'other' },
+                ]}
+                value={editPayMethod}
+                onChange={(e) => setEditPayMethod(e.target.value as PaymentMethod)}
+              />
+
+              <Input
+                label="To‘lov Sanasi"
+                type="date"
+                value={editPayDate}
+                onChange={(e) => setEditPayDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select
+                label="To‘lov Muddati (oylar)"
+                options={[
+                  { label: '1 oy (30 kun)', value: '1' },
+                  { label: '2 oy (60 kun)', value: '2' },
+                  { label: '3 oy (90 kun)', value: '3' },
+                  { label: '6 oy (180 kun)', value: '6' },
+                  { label: '12 oy (360 kun)', value: '12' },
+                ]}
+                value={String(editPayMonths)}
+                onChange={(e) => setEditPayMonths(Number(e.target.value) || 1)}
+              />
+
+              <Input
+                label="Qoldiq Qarz (UZS)"
+                type="number"
+                value={editPayDebt}
+                onChange={(e) => setEditPayDebt(parseNumericInput(e.target.value))}
+                min={0}
+                step={5000}
+                helperText={
+                  Number(editPayDebt) > 0
+                    ? `Mijozda ${formatUZS(editPayDebt)} qarz qoladi`
+                    : 'To‘liq to‘langan (0 UZS qarz)'
+                }
+              />
+            </div>
+
+            <Input
+              label="Izoh (ixtiyoriy)"
+              placeholder="Masalan: Summadagi xatolik to‘g‘rilandi"
+              value={editPayNotes}
+              onChange={(e) => setEditPayNotes(e.target.value)}
+            />
+
+            <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingPayment(null)}
+              >
+                Bekor qilish
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                O‘zgarishlarni Saqlash
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* DELETE PAYMENT CONFIRMATION MODAL */}
+      {paymentToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!paymentToDelete}
+          onClose={() => setPaymentToDelete(null)}
+          onConfirm={() => {
+            if (paymentToDelete) {
+              deletePayment(paymentToDelete.id);
+              setPaymentToDelete(null);
+            }
+          }}
+          title="To‘lovni O‘chirish"
+          description="Haqiqatan ham ushbu to‘lov kvitansiyasini tizimdan butunlay o‘chirmoqchimisiz?"
+          itemType="To‘lov Kvitansiyasi"
+          itemName={`№ ${paymentToDelete.receiptNumber}`}
+          itemDetails={
+            <div className="space-y-1.5 text-xs text-zinc-300">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Mijoz:</span>
+                <span className="font-bold text-white">{paymentToDelete.memberName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">To‘langan summa:</span>
+                <span className="font-extrabold text-lime-400 text-sm">
+                  {formatUZS(paymentToDelete.amount)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Tarif / Muddat:</span>
+                <span className="text-zinc-200">
+                  {paymentToDelete.membershipPlanName} ({paymentToDelete.monthsCount || 1} oy)
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">To‘lov sanasi va usuli:</span>
+                <span className="text-zinc-200">
+                  {formatDateUz(paymentToDelete.paymentDate)} • {paymentToDelete.paymentMethod.toUpperCase()}
+                </span>
+              </div>
+            </div>
+          }
+          warningText="Ushbu to‘lov o‘chirilgach, uning moliyaviy yozuvi bekor qilinadi."
+          confirmText="Ha, to‘lovni o‘chirish"
+        />
       )}
 
       {/* Quick Payment Modal opened from member detail */}

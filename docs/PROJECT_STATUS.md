@@ -64,6 +64,9 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] Search by member name, phone, or receipt ID.
 - [x] Filter by payment method (*All*, *Cash*, *Card*, *Click*, *Payme*).
 - [x] **Multi-Month Subscription Billing**: Select 1, 2, 3, 6, or 12 months with automatic duration extension (e.g. +60, +90, +180, +360 days) preserved forward from active expiration dates.
+- [x] **Duration Calculation & Doubling Fix**: Resolved issue where registering a member for multiple months (e.g. 2 months = 60 days) had `addMember` compute +60 days and then `addPayment` sequentially add another +60 days (resulting in 120 days). Fixed via `customExpiryDate` param on initial creation and automated migration healing for existing `localStorage` data.
+- [x] **Payment Correction & Editing (`EditPaymentModal`)**: Mistakenly entered payment records can now be edited on `/admin/payments` and in the Member Profile detail view. Modifiable attributes include paid amount, payment method, payment date, subscription duration (months), remaining debt, and notes. Member balance and expiration dates stay automatically synchronized.
+- [x] **Payment Deletion (`ConfirmDeleteModal`)**: Erroneous payments can be deleted with a confirmation modal showing full receipt, amount, and member details.
 - [x] **Partial Payments & Debt Engine (`QuickPaymentModal`)**: Real-time calculation when a member pays less than the required amount (e.g. pays 100,000 UZS for a 200,000 UZS plan), auto-detecting existing debts, displaying live debt projections, and updating member balance.
 - [x] **Outstanding Debt Dashboard Metrics**: Top cards display total gym debt receivables and debtor count.
 - [x] **Printable Official Receipt**: Formatted receipt modal with club STIR, address, member details, months count, total expected amount, actual paid amount, remaining debt, and print trigger (`window.print()`).

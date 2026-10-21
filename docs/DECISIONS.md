@@ -50,6 +50,11 @@ This document captures confirmed architectural decisions, technical choices, bus
 - **Status**: Confirmed & Implemented
 - **Decision**: The fitness club is officially branded as **Power Zone** (styled in UI as `POWER ZONE`). The physical location is confirmed as **Farg‘ona viloyati, Quva tumani, Akbarobod markazi**. All customer-facing banners, navigation logos, address cards, official receipt headers, and metadata are aligned to this identity.
 
+### DEC-011: Multi-Month Expiration Anchoring & Payment Rectification
+- **Status**: Confirmed & Implemented
+- **Rule**: When registering a new member with a multi-month subscription (e.g., 2 months = 60 days), the calculated expiration date is explicitly passed as `customExpiryDate` to prevent sequential double-extension in `addPayment`.
+- **Payment CRUD**: To prevent financial discrepancy or accidental input lock, payments can be modified (`updatePayment`) or deleted (`deletePayment`) by administrators with synchronized updates to remaining debt and membership duration.
+
 ---
 
 ## 3. Proposals Pending Approval

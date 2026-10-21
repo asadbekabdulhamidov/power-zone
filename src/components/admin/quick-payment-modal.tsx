@@ -206,6 +206,7 @@ export function QuickPaymentModal({
           (remainingDebt > 0
             ? `Qisman to‘lov (${monthsCount} oy). Qarz: ${formatUZS(remainingDebt)}`
             : `${monthsCount} oylik to‘liq to‘lov`),
+        customExpiryDate: projectedExpiryDate,
       });
 
       setIsLoading(false);
