@@ -31,6 +31,10 @@ const routeTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Mahsulotlar Katalogi',
     subtitle: 'Ichimliklar, vitaminlar va sport tovarlari ombori',
   },
+  '/admin/settings': {
+    title: 'Sozlamalar va Xavfsizlik',
+    subtitle: 'Admin parolini yangilash va tizim parametrlari',
+  },
 };
 
 export default function AdminLayout({

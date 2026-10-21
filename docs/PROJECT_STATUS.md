@@ -75,6 +75,14 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] Active / Inactive status toggle (inactive products are excluded from the landing page).
 - [x] Create and edit product dialogs.
 
+### I. Admin Settings & Password Management (`/admin/settings`)
+- [x] **Admin Password Change Form**: Secure form with current password validation, minimum 6 characters requirement, new password match verification, and show/hide password toggles.
+- [x] **Dynamic Admin Profile State**: Managed in `FitnesFlowProvider` with `localStorage` persistence under `powerzone_admin_profile`.
+- [x] **Dynamic Login Authentication**: `/admin/login` validates directly against the updated admin password in state with instant error feedback.
+- [x] **Profile & Contact Editor**: Edit administrator full name, email, and phone number with immediate topbar and layout updates.
+- [x] **Club Requisites Overview**: Visual summary card displaying Power Zone details (Quva, Akbarobod, operating hours 07:00–23:00, UZS currency).
+- [x] **TopBar & Sidebar Integration**: Navigation links to `/admin/settings` added in the sidebar and topbar with settings shortcut icon and interactive profile card.
+
 ---
 
 ## 2. Partially Implemented Features
@@ -107,6 +115,7 @@ All listed features below have been inspected in code and verified via a clean p
 | `/admin/payments` | `src/app/admin/payments/page.tsx` | Payment Log & Official Receipt |
 | `/admin/notifications` | `src/app/admin/notifications/page.tsx` | Expiration Alerts & Outreach |
 | `/admin/products` | `src/app/admin/products/page.tsx` | Inventory & Bar Products CRUD |
+| `/admin/settings` | `src/app/admin/settings/page.tsx` | Admin Password Change & Club Settings |
 
 ---
 

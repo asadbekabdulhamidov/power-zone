@@ -8,6 +8,7 @@ import {
   Product,
   NotificationItem,
   DashboardStats,
+  AdminProfile,
 } from '@/types';
 import {
   INITIAL_MEMBERS,
@@ -55,9 +56,22 @@ interface FitnesContextType {
   deleteProduct: (id: string) => void;
   toggleProductActive: (id: string) => void;
 
+  // Admin Profile & Security
+  adminProfile: AdminProfile;
+  updateAdminPassword: (currentPass: string, newPass: string) => { success: boolean; message: string };
+  updateAdminProfile: (data: Partial<AdminProfile>) => void;
+
   // Reset to initial mock data
   resetToDefault: () => void;
 }
+
+const DEFAULT_ADMIN: AdminProfile = {
+  fullName: 'Azizbek Admin',
+  email: 'admin@powerzone.uz',
+  phone: '+998 (90) 123-45-67',
+  role: 'Bosh Administrator',
+  password: 'power2026!',
+};
 
 const FitnesContext = createContext<FitnesContextType | undefined>(undefined);
 
@@ -66,6 +80,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const [plans, setPlans] = useState<MembershipPlan[]>(INITIAL_MEMBERSHIP_PLANS);
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [adminProfile, setAdminProfile] = useState<AdminProfile>(DEFAULT_ADMIN);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -76,11 +91,13 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       const savedPlans = localStorage.getItem('fitnesflow_plans');
       const savedPayments = localStorage.getItem('fitnesflow_payments');
       const savedProducts = localStorage.getItem('fitnesflow_products');
+      const savedAdmin = localStorage.getItem('powerzone_admin_profile');
 
       if (savedMembers) setMembers(JSON.parse(savedMembers));
       if (savedPlans) setPlans(JSON.parse(savedPlans));
       if (savedPayments) setPayments(JSON.parse(savedPayments));
       if (savedProducts) setProducts(JSON.parse(savedProducts));
+      if (savedAdmin) setAdminProfile(JSON.parse(savedAdmin));
     } catch {
       // LocalStorage access might fail in private windows or restrictions
     } finally {
@@ -368,16 +385,49 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     showToast('Mahsulot faollik holati yangilandi.');
   };
 
+  const updateAdminPassword = (currentPass: string, newPass: string): { success: boolean; message: string } => {
+    if (currentPass !== adminProfile.password) {
+      showToast('Joriy parol noto‘g‘ri kiritildi!', 'error');
+      return { success: false, message: 'Joriy parol noto‘g‘ri kiritildi!' };
+    }
+    if (!newPass || newPass.length < 6) {
+      showToast('Yangi parol kamida 6 ta belgidan iborat bo‘lishi shart!', 'error');
+      return { success: false, message: 'Yangi parol kamida 6 ta belgidan iborat bo‘lishi shart!' };
+    }
+    const updated = { ...adminProfile, password: newPass };
+    setAdminProfile(updated);
+    try {
+      localStorage.setItem('powerzone_admin_profile', JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+    showToast('Admin paroli muvaffaqiyatli almashtirildi!', 'success');
+    return { success: true, message: 'Admin paroli muvaffaqiyatli almashtirildi!' };
+  };
+
+  const updateAdminProfile = (data: Partial<AdminProfile>) => {
+    const updated = { ...adminProfile, ...data };
+    setAdminProfile(updated);
+    try {
+      localStorage.setItem('powerzone_admin_profile', JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+    showToast('Admin profili ma’lumotlari yangilandi!', 'success');
+  };
+
   const resetToDefault = () => {
     setMembers(INITIAL_MEMBERS);
     setPlans(INITIAL_MEMBERSHIP_PLANS);
     setPayments(INITIAL_PAYMENTS);
     setProducts(INITIAL_PRODUCTS);
+    setAdminProfile(DEFAULT_ADMIN);
     try {
       localStorage.removeItem('fitnesflow_members');
       localStorage.removeItem('fitnesflow_plans');
       localStorage.removeItem('fitnesflow_payments');
       localStorage.removeItem('fitnesflow_products');
+      localStorage.removeItem('powerzone_admin_profile');
     } catch {
       // Ignore
     }
@@ -409,6 +459,9 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         updateProduct,
         deleteProduct,
         toggleProductActive,
+        adminProfile,
+        updateAdminPassword,
+        updateAdminProfile,
         resetToDefault,
       }}
     >

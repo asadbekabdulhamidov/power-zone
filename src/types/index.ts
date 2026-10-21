@@ -93,3 +93,11 @@ export interface DashboardStats {
   overdueCount: number;
   revenueWeeklyGrowth: number;
 }
+
+export interface AdminProfile {
+  fullName: string;
+  email: string;
+  phone: string;
+  role: string;
+  password: string;
+}

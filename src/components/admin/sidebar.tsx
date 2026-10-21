@@ -10,6 +10,7 @@ import {
   Receipt,
   Bell,
   ShoppingBag,
+  Settings,
   ExternalLink,
   LogOut,
   Dumbbell,
@@ -58,6 +59,11 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
       name: 'Mahsulotlar katalogi',
       href: '/admin/products',
       icon: ShoppingBag,
+    },
+    {
+      name: 'Sozlamalar',
+      href: '/admin/settings',
+      icon: Settings,
     },
   ];
 

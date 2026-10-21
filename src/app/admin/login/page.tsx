@@ -9,6 +9,7 @@ import * as z from 'zod';
 import { Dumbbell, Eye, EyeOff, ArrowLeft, Lock, Mail, ShieldAlert, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useFitnesFlow } from '@/context/fitnes-context';
 
 const loginSchema = z.object({
   login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@powerzone.uz)'),
@@ -20,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { adminProfile } = useFitnesFlow();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,26 +35,41 @@ export default function AdminLoginPage() {
     resolver: zodResolver(loginSchema),
     defaultValues: {
       login: 'admin@powerzone.uz',
-      password: 'password123',
+      password: '',
       rememberMe: true,
     },
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setFormError(null);
 
-    // Simulate authentication delay for prototype
+    // Validate against current admin profile
     setTimeout(() => {
       setIsSubmitting(false);
-      // Prototype demonstration: accept any valid form input
+
+      const normalizedInput = data.login.trim().toLowerCase();
+      const adminEmail = (adminProfile.email || 'admin@powerzone.uz').toLowerCase();
+      const isValidLogin =
+        normalizedInput === adminEmail ||
+        normalizedInput === 'admin' ||
+        normalizedInput === 'admin@powerzone.uz';
+
+      const currentPassword = adminProfile.password || 'power2026!';
+      const isValidPassword = data.password === currentPassword;
+
+      if (!isValidLogin || !isValidPassword) {
+        setFormError('Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.');
+        return;
+      }
+
       router.push('/admin');
-    }, 700);
+    }, 600);
   };
 
   const handleFillDemo = () => {
-    setValue('login', 'admin@powerzone.uz');
-    setValue('password', 'power2026!');
+    setValue('login', adminProfile.email || 'admin@powerzone.uz');
+    setValue('password', adminProfile.password || 'power2026!');
     setValue('rememberMe', true);
   };
 
