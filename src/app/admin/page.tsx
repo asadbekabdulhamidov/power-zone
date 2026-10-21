@@ -277,6 +277,11 @@ export default function AdminDashboardPage() {
                             {m.fullName}
                           </div>
                           <div className="text-[11px] text-zinc-400">{m.membershipPlanName}</div>
+                          {m.debtAmount && m.debtAmount > 0 ? (
+                            <div className="text-[10px] font-extrabold text-rose-400 mt-0.5">
+                              ⚠️ Qarz: {formatUZS(m.debtAmount)}
+                            </div>
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-xs text-zinc-300">
                           {formatDateUz(m.expiryDate)}

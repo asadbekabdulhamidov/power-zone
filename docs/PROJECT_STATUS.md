@@ -42,12 +42,14 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Telegram & Instagram Social Profiles**: Members can have their Telegram (`@username`) and Instagram usernames recorded with direct clickable chat/profile links in the table and profile details.
 - [x] **Live Web Camera Photo Capture**: Administrators can turn on the gym/club web camera directly inside the form (`getUserMedia`), view a live mirror stream, and capture a photo snapshot on the spot.
 - [x] **Device File Photo Upload**: Direct file upload from computer or phone file storage with instant preview.
+- [x] **Partial Payments & Debt Tracking**: Highlights members who made partial payments with clear debt badges (`⚠️ Qarz: X UZS`), dedicated `⚠️ Qarzdorlar (X ta)` filter tab, and total receivables summary pill.
+- [x] **Multi-Month Membership Support**: Supports 1, 2, 3, 6, 12 month payment subscriptions and badges.
 - [x] Real-time search by full name, phone number, Telegram, or Instagram handle.
-- [x] Filters for status (*All*, *Active*, *Expiring*, *Expired*) and plan type.
+- [x] Filters for status (*All*, *Active*, *Expiring*, *Expired*, *⚠️ Qarzdorlar*) and plan type.
 - [x] **Weekly 3-Day Attendance Enforcer**: Tracks and displays visits this week (`X/3 kun`). Includes check-in button that blocks visits once 3/3 is reached.
-- [x] **Add Member Modal**: Full form with name, phone, photo (camera/upload), telegram, instagram, gender, age, start date, and plan selection.
-- [x] **Edit Member Modal**: Updates name, phone, photo, telegram, instagram, expiration, notes, and status.
-- [x] **Member Detail View**: Slide-out/modal view showing complete profile, visit metrics, social outreach links, and isolated payment history for that specific member.
+- [x] **Add Member Modal**: Full form with name, phone, photo (camera/upload), telegram, instagram, duration (months), initial payment, partial debt calculation, and plan selection.
+- [x] **Edit Member Modal**: Updates name, phone, photo, telegram, instagram, expiration, debt amount, notes, and status.
+- [x] **Member Detail View**: Slide-out/modal view showing complete profile, debt warning banner, quick debt repayment action, visit metrics, social outreach links, and isolated payment history for that specific member.
 - [x] Delete member action with confirmation dialog.
 
 ### E. Membership Plans Management (`/admin/memberships`)
@@ -58,11 +60,13 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Historical Price Protection**: Preserves existing members' agreed prices when plan prices are edited.
 
 ### F. Payments Management (`/admin/payments`)
-- [x] Complete payment history table with receipt numbers, dates, methods, and amounts.
+- [x] Complete payment history table with receipt numbers, dates, methods, amounts, and debt status.
 - [x] Search by member name, phone, or receipt ID.
 - [x] Filter by payment method (*All*, *Cash*, *Card*, *Click*, *Payme*).
-- [x] **Quick Payment Modal (`QuickPaymentModal`)**: Member & plan selector, auto-fills agreed price, updates member's expiration date, and records today's revenue.
-- [x] **Printable Official Receipt**: Formatted receipt modal with club STIR, address, member details, itemized breakdown, and print trigger (`window.print()`).
+- [x] **Multi-Month Subscription Billing**: Select 1, 2, 3, 6, or 12 months with automatic duration extension (e.g. +60, +90, +180, +360 days) preserved forward from active expiration dates.
+- [x] **Partial Payments & Debt Engine (`QuickPaymentModal`)**: Real-time calculation when a member pays less than the required amount (e.g. pays 100,000 UZS for a 200,000 UZS plan), auto-detecting existing debts, displaying live debt projections, and updating member balance.
+- [x] **Outstanding Debt Dashboard Metrics**: Top cards display total gym debt receivables and debtor count.
+- [x] **Printable Official Receipt**: Formatted receipt modal with club STIR, address, member details, months count, total expected amount, actual paid amount, remaining debt, and print trigger (`window.print()`).
 
 ### G. Notifications & Rules (`/admin/notifications`)
 - [x] Tabbed interface: *Bugun tugaydiganlar* (Due today), *Ertaga tugaydiganlar* (Due tomorrow), *Muddati o‘tganlar* (Overdue).

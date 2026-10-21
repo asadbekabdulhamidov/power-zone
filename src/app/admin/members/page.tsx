@@ -17,6 +17,8 @@ import {
   Upload,
   Send,
   ExternalLink,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
-import { Member, MemberStatus } from '@/types';
+import { Member, MemberStatus, PaymentMethod } from '@/types';
 import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
 
@@ -48,8 +50,16 @@ function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 export default function MembersPage() {
-  const { members, plans, payments, addMember, updateMember, deleteMember, recordMemberVisit } =
-    useFitnesFlow();
+  const {
+    members,
+    plans,
+    payments,
+    addMember,
+    updateMember,
+    deleteMember,
+    recordMemberVisit,
+    addPayment,
+  } = useFitnesFlow();
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,6 +79,9 @@ export default function MembersPage() {
   const [formInstagram, setFormInstagram] = useState('');
   const [formPhoto, setFormPhoto] = useState<string | null>(null);
   const [formPlanId, setFormPlanId] = useState(plans[0]?.id || '');
+  const [formMonthsCount, setFormMonthsCount] = useState<number>(1);
+  const [formPaidAmount, setFormPaidAmount] = useState<number | null>(null);
+  const [formPaymentMethod, setFormPaymentMethod] = useState<PaymentMethod>('cash');
   const [formStartDate, setFormStartDate] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -88,11 +101,22 @@ export default function MembersPage() {
   const [editTelegram, setEditTelegram] = useState('');
   const [editInstagram, setEditInstagram] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [editDebtAmount, setEditDebtAmount] = useState<number>(0);
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
   const editStreamRef = useRef<MediaStream | null>(null);
   const editFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Debt metrics
+  const debtorsCount = useMemo(
+    () => members.filter((m) => m.debtAmount && m.debtAmount > 0).length,
+    [members]
+  );
+  const totalDebt = useMemo(
+    () => members.reduce((sum, m) => sum + (m.debtAmount || 0), 0),
+    [members]
+  );
 
   // Camera helpers
   const startCamera = async (isEdit = false) => {
@@ -199,6 +223,9 @@ export default function MembersPage() {
     setFormInstagram('');
     setFormPhoto(null);
     setCameraError(null);
+    setFormMonthsCount(1);
+    setFormPaidAmount(null);
+    setFormPaymentMethod('cash');
     setFormNotes('');
     setIsCameraActive(false);
     setIsAddModalOpen(true);
@@ -216,6 +243,7 @@ export default function MembersPage() {
     setEditTelegram(member.telegramUsername || '');
     setEditInstagram(member.instagramUsername || '');
     setEditPhoto(member.photoUrl || null);
+    setEditDebtAmount(member.debtAmount || 0);
     setEditCameraError(null);
     setIsEditCameraActive(false);
   };
@@ -236,7 +264,11 @@ export default function MembersPage() {
         (m.instagramUsername && m.instagramUsername.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchStatus =
-        statusFilter === 'all' || m.status === statusFilter;
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'debtors'
+          ? (m.debtAmount || 0) > 0
+          : m.status === statusFilter;
 
       const matchPlan =
         planFilter === 'all' || m.membershipPlanId === planFilter;
@@ -261,11 +293,16 @@ export default function MembersPage() {
 
     const selectedPlan = plans.find((p) => p.id === formPlanId) || plans[0];
     const duration = selectedPlan.durationDays || 30;
+    const months = selectedPlan.accessType === 'single_visit' ? 1 : formMonthsCount;
 
     const startDateObj = new Date(formStartDate);
     const expiryDateObj = new Date(formStartDate);
-    expiryDateObj.setDate(startDateObj.getDate() + duration);
+    expiryDateObj.setDate(startDateObj.getDate() + duration * months);
     const expiryDateStr = expiryDateObj.toISOString().split('T')[0];
+
+    const planTotal = selectedPlan.price * months;
+    const actualPaid = formPaidAmount !== null ? Number(formPaidAmount) : planTotal;
+    const initialDebt = Math.max(0, planTotal - actualPaid);
 
     // Final photo: captured/uploaded or gender default
     const defaultPhoto =
@@ -285,7 +322,7 @@ export default function MembersPage() {
       ? formInstagram.trim().replace(/^@/, '')
       : undefined;
 
-    addMember({
+    const newMember = addMember({
       fullName: formName.trim(),
       phone: formPhone.trim(),
       photoUrl: finalPhoto,
@@ -294,6 +331,8 @@ export default function MembersPage() {
       membershipPlanId: selectedPlan.id,
       membershipPlanName: selectedPlan.name,
       membershipPriceAgreed: selectedPlan.price,
+      debtAmount: initialDebt,
+      paidMonths: months,
       accessType: selectedPlan.accessType,
       startDate: formStartDate,
       expiryDate: expiryDateStr,
@@ -302,6 +341,28 @@ export default function MembersPage() {
       age: formAge,
       notes: formNotes.trim() || undefined,
     });
+
+    // Record initial payment if any paid amount
+    if (actualPaid > 0) {
+      addPayment({
+        memberId: newMember.id,
+        memberName: newMember.fullName,
+        memberPhone: newMember.phone,
+        membershipPlanId: selectedPlan.id,
+        membershipPlanName: selectedPlan.name,
+        amount: actualPaid,
+        monthsCount: months,
+        expectedAmount: planTotal,
+        remainingDebt: initialDebt,
+        paymentDate: formStartDate,
+        paymentMethod: formPaymentMethod,
+        status: 'completed',
+        notes:
+          initialDebt > 0
+            ? `Ro‘yxatdan o‘tishda qisman to‘lov (${months} oy). Qarz: ${formatUZS(initialDebt)}`
+            : `Ro‘yxatdan o‘tishda to‘liq to‘lov (${months} oy)`,
+      });
+    }
 
     handleCloseAddModal();
   };
@@ -331,6 +392,7 @@ export default function MembersPage() {
       notes: editingMember.notes,
       expiryDate: editingMember.expiryDate,
       startDate: editingMember.startDate,
+      debtAmount: Number(editDebtAmount) || 0,
     });
 
     handleCloseEditModal();
@@ -341,11 +403,16 @@ export default function MembersPage() {
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+          <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2 flex-wrap">
             <span>A’zolar Boshqaruvi</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-zinc-800 text-lime-400 font-bold border border-zinc-700">
               {members.length} ta a’zo
             </span>
+            {debtorsCount > 0 && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-950/80 text-rose-300 font-bold border border-rose-800">
+                ⚠️ Qarzlar: {formatUZS(totalDebt)} ({debtorsCount} kishi)
+              </span>
+            )}
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
             Mijozlar ma’lumotlari, tariflar, tashriflar va to‘lov statuslari nazorati.
@@ -382,13 +449,22 @@ export default function MembersPage() {
             { id: 'active', label: 'Faol' },
             { id: 'expiring', label: 'Tugayotgan' },
             { id: 'expired', label: 'Tugagan' },
+            {
+              id: 'debtors',
+              label: `⚠️ Qarzdorlar (${debtorsCount})`,
+              isWarning: debtorsCount > 0,
+            },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setStatusFilter(item.id)}
-              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap ${
+              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap cursor-pointer ${
                 statusFilter === item.id
-                  ? 'bg-lime-500 text-zinc-950 border-lime-400 shadow-sm'
+                  ? item.id === 'debtors'
+                    ? 'bg-rose-500 text-white border-rose-400 shadow-sm font-bold'
+                    : 'bg-lime-500 text-zinc-950 border-lime-400 shadow-sm font-bold'
+                  : item.id === 'debtors' && debtorsCount > 0
+                  ? 'bg-rose-950/40 border-rose-800/80 text-rose-300 hover:text-white hover:bg-rose-900/60'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
               }`}
             >
@@ -489,12 +565,19 @@ export default function MembersPage() {
                     <div className="text-xs font-semibold text-zinc-200">
                       {member.membershipPlanName}
                     </div>
-                    <div className="text-[11px] text-lime-400 font-bold">
-                      {formatUZS(member.membershipPriceAgreed)}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[11px] text-lime-400 font-bold">
+                        {formatUZS(member.membershipPriceAgreed)}
+                      </span>
+                      {member.paidMonths && member.paidMonths > 1 && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-lime-500/10 text-lime-400 border border-lime-500/20">
+                          {member.paidMonths} oy
+                        </span>
+                      )}
                     </div>
                   </TableCell>
 
-                  {/* Status */}
+                  {/* Status & Debt */}
                   <TableCell>
                     <Badge status={member.status}>
                       {member.status === 'active' && 'Faol'}
@@ -502,6 +585,26 @@ export default function MembersPage() {
                       {member.status === 'expired' && 'Tugagan'}
                       {member.status === 'frozen' && 'Muzlatilgan'}
                     </Badge>
+                    {member.debtAmount && member.debtAmount > 0 ? (
+                      <div className="mt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPaymentModalMemberId(member.id);
+                          }}
+                          className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-950/90 text-rose-300 border border-rose-800 hover:bg-rose-900 cursor-pointer transition-colors shadow-sm"
+                          title="Qarzni so‘ndirish"
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
+                          <span>Qarz: {formatUZS(member.debtAmount)}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-zinc-500 mt-0.5 font-medium">
+                        Qarz yo‘q
+                      </div>
+                    )}
                   </TableCell>
 
                   {/* Dates */}
@@ -561,9 +664,26 @@ export default function MembersPage() {
                       <button
                         onClick={() => recordMemberVisit(member.id)}
                         title="Tashrifni qayd etish"
-                        className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-lime-500 hover:text-zinc-950 text-zinc-300 transition-colors"
+                        className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-lime-500 hover:text-zinc-950 text-zinc-300 transition-colors cursor-pointer"
                       >
                         <Dumbbell className="w-3.5 h-3.5" />
+                      </button>
+
+                      {/* Payment / Debt Action */}
+                      <button
+                        onClick={() => setPaymentModalMemberId(member.id)}
+                        title={
+                          member.debtAmount && member.debtAmount > 0
+                            ? `Qarzni to‘lash (${formatUZS(member.debtAmount)})`
+                            : 'To‘lov qabul qilish / Muddatni uzaytirish'
+                        }
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          member.debtAmount && member.debtAmount > 0
+                            ? 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 shadow-sm'
+                            : 'bg-zinc-800/80 hover:bg-lime-500 hover:text-zinc-950 text-zinc-300'
+                        }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
                       </button>
 
                       {/* View details */}
@@ -827,11 +947,19 @@ export default function MembersPage() {
             <Select
               label="Tarif Rejasi"
               options={plans.map((p) => ({
-                label: `${p.name} (${formatUZS(p.price)})`,
+                label: `${p.name} (${formatUZS(p.price)}/oy)`,
                 value: p.id,
               }))}
               value={formPlanId}
-              onChange={(e) => setFormPlanId(e.target.value)}
+              onChange={(e) => {
+                const newPlanId = e.target.value;
+                setFormPlanId(newPlanId);
+                const p = plans.find((item) => item.id === newPlanId);
+                if (p) {
+                  const months = p.accessType === 'single_visit' ? 1 : formMonthsCount;
+                  setFormPaidAmount(p.price * months);
+                }
+              }}
             />
 
             <Input
@@ -842,6 +970,116 @@ export default function MembersPage() {
               required
             />
           </div>
+
+          {/* DURATION (MONTHS) SELECTION IN ADD MODAL */}
+          {(() => {
+            const currentPlan = plans.find((p) => p.id === formPlanId) || plans[0];
+            const isSingle = currentPlan?.accessType === 'single_visit';
+            const months = isSingle ? 1 : formMonthsCount;
+            const totalRequired = (currentPlan?.price || 200000) * months;
+            const actualPaid = formPaidAmount !== null ? formPaidAmount : totalRequired;
+            const debt = Math.max(0, totalRequired - actualPaid);
+
+            return (
+              <div className="space-y-3 pt-2 pb-1 border-t border-zinc-800">
+                {!isSingle && (
+                  <div>
+                    <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-lime-400" />
+                        <span>A’zolik Muddati (Necha oylik to‘lov?)</span>
+                      </span>
+                      <span className="text-xs font-bold text-lime-400">
+                        {months} oy ({months * 30} kun)
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[1, 2, 3, 6, 12].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setFormMonthsCount(m);
+                            setFormPaidAmount((currentPlan?.price || 200000) * m);
+                          }}
+                          className={`py-1.5 px-2 text-xs font-semibold rounded-xl border transition-all text-center cursor-pointer ${
+                            formMonthsCount === m
+                              ? 'bg-lime-500 text-zinc-950 border-lime-400 font-extrabold shadow-sm'
+                              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {m} oy
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* INITIAL PAYMENT & DEBT CALCULATION */}
+                <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-400">Hisoblangan to‘liq summa:</span>
+                    <span className="text-sm font-black text-lime-400">
+                      {formatUZS(totalRequired)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <Input
+                      label="Boshlang‘ich To‘langan Summa (UZS)"
+                      type="number"
+                      min={0}
+                      step={5000}
+                      value={actualPaid}
+                      onChange={(e) => setFormPaidAmount(Number(e.target.value))}
+                      helperText={
+                        debt > 0
+                          ? `⚠️ Qarz: ${formatUZS(debt)}`
+                          : 'To‘liq to‘lov (0 UZS qarz)'
+                      }
+                    />
+
+                    <div>
+                      <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+                        To‘lov Usuli
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'cash', label: 'Naqd' },
+                          { id: 'card', label: 'Karta' },
+                          { id: 'click', label: 'Click' },
+                          { id: 'payme', label: 'Payme' },
+                        ].map((method) => (
+                          <button
+                            key={method.id}
+                            type="button"
+                            onClick={() => setFormPaymentMethod(method.id as PaymentMethod)}
+                            className={`py-1.5 text-xs font-medium rounded-lg border transition-all text-center cursor-pointer ${
+                              formPaymentMethod === method.id
+                                ? 'bg-lime-500 text-zinc-950 border-lime-400 font-bold'
+                                : 'bg-zinc-800 border-zinc-700 text-zinc-300'
+                            }`}
+                          >
+                            {method.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {debt > 0 && (
+                    <div className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/80 text-amber-200 text-xs flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>
+                        Mijoz hisobiga <strong>{formatUZS(debt)}</strong> qarz sifatida
+                        yoziladi.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           <Input
             label="Qo‘shimcha Izoh (ixtiyoriy)"
@@ -1042,6 +1280,20 @@ export default function MembersPage() {
             </div>
 
             <Input
+              label="Qarz Miqdori (UZS)"
+              type="number"
+              min={0}
+              step={5000}
+              value={editDebtAmount}
+              onChange={(e) => setEditDebtAmount(Number(e.target.value))}
+              helperText={
+                editDebtAmount > 0
+                  ? `Mijozda ${formatUZS(editDebtAmount)} to‘lanmagan qarz hisoblanadi.`
+                  : 'Qarz yo‘q (0 UZS).'
+              }
+            />
+
+            <Input
               label="Izoh"
               value={editingMember.notes || ''}
               onChange={(e) =>
@@ -1136,6 +1388,50 @@ export default function MembersPage() {
                 </div>
               </div>
             </div>
+
+            {/* DEBT BANNER IF MEMBER HAS OUTSTANDING BALANCE */}
+            {viewingMember.debtAmount && viewingMember.debtAmount > 0 ? (
+              <div className="p-4 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-900/60 border border-rose-700 flex items-center justify-center text-rose-400 shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-wider text-rose-400">
+                      To‘lanmagan Qarz Mavjud
+                    </div>
+                    <div className="text-xl font-black text-white">
+                      {formatUZS(viewingMember.debtAmount)}
+                    </div>
+                    <p className="text-[11px] text-rose-300/80">
+                      Mijoz to‘lov summasidan kam pul bergan va hisobida qarz qolgan.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => {
+                    const memberId = viewingMember.id;
+                    setViewingMember(null);
+                    setPaymentModalMemberId(memberId);
+                  }}
+                  className="shadow-md shadow-lime-500/20 shrink-0"
+                >
+                  <CreditCard className="w-4 h-4 mr-1.5" />
+                  <span>Qarzni To‘lash</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 text-xs flex items-center justify-between">
+                <span className="text-zinc-400">Qarzdorlik holati:</span>
+                <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Qarz yo‘q (To‘lovlar to‘liq amalga oshirilgan)</span>
+                </span>
+              </div>
+            )}
 
             {/* Plan Info Card */}
             <div className="p-4 rounded-xl bg-[#090d16] border border-zinc-800 space-y-3">

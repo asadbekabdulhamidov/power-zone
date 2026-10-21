@@ -10,6 +10,8 @@ import {
   Printer,
   CheckCircle2,
   Dumbbell,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +23,7 @@ import { formatUZS, formatDateUz, formatPhoneNumber } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
 
 export default function PaymentsPage() {
-  const { payments, stats } = useFitnesFlow();
+  const { payments, members, stats } = useFitnesFlow();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
@@ -47,6 +49,14 @@ export default function PaymentsPage() {
       .filter((p) => p.status === 'completed')
       .reduce((sum, p) => sum + p.amount, 0);
   }, [payments]);
+
+  const totalDebt = useMemo(() => {
+    return members.reduce((sum, m) => sum + (m.debtAmount || 0), 0);
+  }, [members]);
+
+  const debtorsCount = useMemo(() => {
+    return members.filter((m) => m.debtAmount && m.debtAmount > 0).length;
+  }, [members]);
 
   return (
     <div className="space-y-6">
@@ -75,7 +85,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Metric Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
@@ -94,7 +104,7 @@ export default function PaymentsPage() {
         <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              Jami Qayd Etilgan Tushum
+              Jami Tushum
             </p>
             <div className="text-2xl font-black text-white mt-1">
               {formatUZS(totalAllTimeRevenue)}
@@ -114,10 +124,27 @@ export default function PaymentsPage() {
             <div className="text-2xl font-black text-blue-400 mt-1">
               {payments.length} ta
             </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">100% muvaffaqiyatli</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">Muvaffaqiyatli to‘lovlar</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
             <Receipt className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              Umumiy Qarz Miqdori
+            </p>
+            <div className="text-2xl font-black text-rose-400 mt-1">
+              {formatUZS(totalDebt)}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              {debtorsCount > 0 ? `${debtorsCount} ta a’zoda qarz mavjud` : 'Qarzlar mavjud emas'}
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -165,8 +192,9 @@ export default function PaymentsPage() {
             <TableRow>
               <TableHead>Kvitansiya №</TableHead>
               <TableHead>Mijoz (A’zo)</TableHead>
-              <TableHead>Tarif Rejasi</TableHead>
-              <TableHead>Summa</TableHead>
+              <TableHead>Tarif va Muddat</TableHead>
+              <TableHead>To‘langan Summa</TableHead>
+              <TableHead>Qarz Qoldig‘i</TableHead>
               <TableHead>To‘lov Usuli</TableHead>
               <TableHead>Sana</TableHead>
               <TableHead className="text-right">Kvitansiya</TableHead>
@@ -186,11 +214,34 @@ export default function PaymentsPage() {
                     {formatPhoneNumber(payment.memberPhone)}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-zinc-300">
-                  {payment.membershipPlanName}
+                <TableCell>
+                  <div className="text-xs font-semibold text-zinc-200">
+                    {payment.membershipPlanName}
+                  </div>
+                  {payment.monthsCount && payment.monthsCount > 1 ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-lime-400 bg-lime-500/10 px-1.5 py-0.5 rounded border border-lime-500/20 mt-0.5">
+                      <Clock className="w-2.5 h-2.5" />
+                      <span>{payment.monthsCount} oy ({payment.monthsCount * 30} kun)</span>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-zinc-500">1 oylik</span>
+                  )}
                 </TableCell>
                 <TableCell className="font-black text-sm text-lime-400">
                   {formatUZS(payment.amount)}
+                </TableCell>
+                <TableCell>
+                  {payment.remainingDebt && payment.remainingDebt > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-300 border border-rose-800 shadow-sm">
+                      <AlertTriangle className="w-2.5 h-2.5 text-rose-400" />
+                      <span>Qarz: {formatUZS(payment.remainingDebt)}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-800/40">
+                      <CheckCircle2 className="w-2.5 h-2.5" />
+                      <span>To‘liq</span>
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 border border-zinc-700">
@@ -220,7 +271,7 @@ export default function PaymentsPage() {
 
             {filteredPayments.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-zinc-400 text-xs">
+                <TableCell colSpan={8} className="text-center py-12 text-zinc-400 text-xs">
                   To‘lovlar topilmadi.
                 </TableCell>
               </TableRow>
@@ -295,6 +346,13 @@ export default function PaymentsPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-zinc-400">To‘lov davri:</span>
+                  <span className="font-semibold text-zinc-200">
+                    {selectedReceipt.monthsCount || 1} oy (
+                    {(selectedReceipt.monthsCount || 1) * 30} kun)
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-zinc-400">To‘lov usuli:</span>
                   <span className="uppercase font-semibold text-zinc-200">
                     {selectedReceipt.paymentMethod}
@@ -303,21 +361,38 @@ export default function PaymentsPage() {
               </div>
 
               {/* Item detail */}
-              <div className="py-4 border-b border-zinc-800/80">
+              <div className="py-4 border-b border-zinc-800/80 space-y-2">
                 <div className="flex justify-between text-xs font-semibold text-zinc-400 mb-1">
                   <span>Xizmat turi</span>
-                  <span>Summa</span>
+                  <span>Hisoblangan</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="font-bold text-white">
-                    {selectedReceipt.membershipPlanName}
+                    {selectedReceipt.membershipPlanName} (
+                    {selectedReceipt.monthsCount || 1} oylik)
                   </span>
-                  <span className="font-black text-lime-400">
-                    {formatUZS(selectedReceipt.amount)}
+                  <span className="font-bold text-zinc-200">
+                    {formatUZS(
+                      selectedReceipt.expectedAmount || selectedReceipt.amount
+                    )}
                   </span>
                 </div>
+
+                {selectedReceipt.remainingDebt &&
+                selectedReceipt.remainingDebt > 0 ? (
+                  <div className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-800/70 text-xs flex justify-between items-center text-rose-300">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Qoldiq qarz summasi:</span>
+                    </span>
+                    <span className="font-black text-rose-300 text-sm">
+                      {formatUZS(selectedReceipt.remainingDebt)}
+                    </span>
+                  </div>
+                ) : null}
+
                 {selectedReceipt.notes && (
-                  <p className="text-[11px] text-zinc-400 mt-1 italic">
+                  <p className="text-[11px] text-zinc-400 italic">
                     Izoh: {selectedReceipt.notes}
                   </p>
                 )}
@@ -327,17 +402,25 @@ export default function PaymentsPage() {
               <div className="pt-4 flex items-center justify-between">
                 <div>
                   <span className="text-xs text-zinc-400 uppercase font-semibold">
-                    Jami To‘langan
+                    Haqiqatda To‘langan
                   </span>
                   <div className="text-xl font-black text-lime-400">
                     {formatUZS(selectedReceipt.amount)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-700/50 px-2 py-0.5 rounded-full font-bold">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>To‘landi</span>
-                  </div>
+                  {selectedReceipt.remainingDebt &&
+                  selectedReceipt.remainingDebt > 0 ? (
+                    <div className="inline-flex items-center gap-1 text-[11px] text-amber-300 bg-amber-950/60 border border-amber-700/50 px-2.5 py-0.5 rounded-full font-bold">
+                      <AlertTriangle className="w-3 h-3" />
+                      <span>Qisman to‘landi</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-700/50 px-2.5 py-0.5 rounded-full font-bold">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>To‘liq to‘landi</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

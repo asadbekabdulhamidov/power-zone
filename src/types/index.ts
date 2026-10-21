@@ -26,6 +26,8 @@ export interface Member {
   membershipPlanId: string;
   membershipPlanName: string;
   membershipPriceAgreed: number; // Preserves historical agreed price even when plan changes
+  debtAmount?: number; // Qarz summasi (agar qisman to'lov qilingan bo'lsa)
+  paidMonths?: number; // Necha oylik to'langan
   accessType: AccessType;
   startDate: string; // YYYY-MM-DD
   expiryDate: string; // YYYY-MM-DD
@@ -49,7 +51,10 @@ export interface Payment {
   memberPhone: string;
   membershipPlanId: string;
   membershipPlanName: string;
-  amount: number; // in UZS
+  amount: number; // in UZS (amalda to'langan summa)
+  monthsCount?: number; // To'lov muddati (oylar soni: 1, 2, 3, 6, 12)
+  expectedAmount?: number; // Tarif bo'yicha to'liq hisoblangan summa
+  remainingDebt?: number; // Ushbu to'lovdan keyin qolgan qarz summasi
   paymentDate: string; // YYYY-MM-DD or ISO
   paymentMethod: PaymentMethod;
   status: PaymentStatus;
@@ -84,6 +89,7 @@ export interface NotificationItem {
   dueType: DueType;
   daysOverdue?: number;
   amount: number;
+  debtAmount?: number;
   status: MemberStatus;
 }
 

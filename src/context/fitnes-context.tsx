@@ -5,6 +5,7 @@ import {
   Member,
   MembershipPlan,
   Payment,
+  PaymentMethod,
   Product,
   NotificationItem,
   DashboardStats,
@@ -26,7 +27,7 @@ import {
   INITIAL_WEBSITE_CONTENT,
   INITIAL_CONTACT_MESSAGES,
 } from '@/lib/mock-data';
-import { getDaysDifference, generateId, generateReceiptNumber } from '@/lib/utils';
+import { getDaysDifference, generateId, generateReceiptNumber, formatUZS } from '@/lib/utils';
 
 interface Toast {
   id: string;
@@ -59,6 +60,7 @@ interface FitnesContextType {
 
   // Payment actions
   addPayment: (data: Omit<Payment, 'id' | 'receiptNumber'>) => Payment;
+  settleMemberDebt: (memberId: string, paidAmount: number, paymentMethod?: PaymentMethod) => void;
 
   // Product actions
   addProduct: (data: Omit<Product, 'id'>) => Product;
@@ -224,6 +226,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           expiryDate: m.expiryDate,
           dueType: 'today',
           amount: m.membershipPriceAgreed,
+          debtAmount: m.debtAmount,
           status: 'expiring',
         });
       } else if (diff === 1) {
@@ -236,6 +239,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           expiryDate: m.expiryDate,
           dueType: 'tomorrow',
           amount: m.membershipPriceAgreed,
+          debtAmount: m.debtAmount,
           status: 'expiring',
         });
       } else if (diff < 0) {
@@ -249,6 +253,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           dueType: 'overdue',
           daysOverdue: Math.abs(diff),
           amount: m.membershipPriceAgreed,
+          debtAmount: m.debtAmount,
           status: 'expired',
         });
       }
@@ -392,33 +397,45 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
 
   // Payment actions
   const addPayment = (data: Omit<Payment, 'id' | 'receiptNumber'>): Payment => {
+    const months = data.monthsCount && data.monthsCount > 0 ? data.monthsCount : 1;
+    const plan = plans.find((p) => p.id === data.membershipPlanId);
+    const unitPrice = plan?.price || 200000;
+    const expected = data.expectedAmount !== undefined ? data.expectedAmount : unitPrice * months;
+    const debt = data.remainingDebt !== undefined ? data.remainingDebt : Math.max(0, expected - data.amount);
+
     const newPayment: Payment = {
       ...data,
+      monthsCount: months,
+      expectedAmount: expected,
+      remainingDebt: debt,
       id: generateId('pay'),
       receiptNumber: generateReceiptNumber(),
     };
     setPayments((prev) => [newPayment, ...prev]);
 
-    // Automatically update member's status and expiration if valid
+    // Automatically update member's status, expiration and debt
     setMembers((prev) =>
       prev.map((m) => {
         if (m.id === data.memberId) {
-          const startDate = data.paymentDate || new Date().toISOString().split('T')[0];
-          const plan = plans.find((p) => p.id === data.membershipPlanId);
-          const duration = plan?.durationDays || 30;
-          
-          const newExpDate = new Date(startDate);
-          newExpDate.setDate(newExpDate.getDate() + duration);
-          const expiryDateStr = newExpDate.toISOString().split('T')[0];
+          const payDate = data.paymentDate || new Date().toISOString().split('T')[0];
+          const durationDays = (plan?.durationDays || 30) * months;
+
+          const currentExp = new Date(m.expiryDate);
+          const paymentDateObj = new Date(payDate);
+          const baseDate = currentExp > paymentDateObj ? new Date(currentExp) : new Date(paymentDateObj);
+          baseDate.setDate(baseDate.getDate() + durationDays);
+          const expiryDateStr = baseDate.toISOString().split('T')[0];
 
           return {
             ...m,
-            startDate,
+            startDate: payDate,
             expiryDate: expiryDateStr,
             status: 'active',
             membershipPlanId: data.membershipPlanId,
             membershipPlanName: data.membershipPlanName,
-            membershipPriceAgreed: data.amount,
+            membershipPriceAgreed: m.membershipPriceAgreed || unitPrice,
+            debtAmount: debt,
+            paidMonths: months,
             accessType: plan?.accessType || m.accessType,
             visitsThisWeek: 0, // Reset visits counter on renewal
           };
@@ -427,8 +444,59 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       })
     );
 
-    showToast(`To‘lov qabul qilindi! Kvitansiya: ${newPayment.receiptNumber}`);
+    if (debt > 0) {
+      showToast(
+        `Qisman to‘lov qabul qilindi. Qolgan qarz: ${formatUZS(debt)}. Kvitansiya: ${newPayment.receiptNumber}`,
+        'info'
+      );
+    } else {
+      showToast(
+        `To‘lov to‘liq qabul qilindi (${months} oylik). Kvitansiya: ${newPayment.receiptNumber}`,
+        'success'
+      );
+    }
     return newPayment;
+  };
+
+  const settleMemberDebt = (
+    memberId: string,
+    paidAmount: number,
+    paymentMethod: PaymentMethod = 'cash'
+  ) => {
+    const member = members.find((m) => m.id === memberId);
+    if (!member) return;
+
+    const prevDebt = member.debtAmount || 0;
+    const newDebt = Math.max(0, prevDebt - paidAmount);
+
+    const payment: Payment = {
+      id: generateId('pay'),
+      receiptNumber: generateReceiptNumber(),
+      memberId: member.id,
+      memberName: member.fullName,
+      memberPhone: member.phone,
+      membershipPlanId: member.membershipPlanId,
+      membershipPlanName: `${member.membershipPlanName} (Qarz to‘lovi)`,
+      amount: paidAmount,
+      monthsCount: member.paidMonths || 1,
+      expectedAmount: prevDebt,
+      remainingDebt: newDebt,
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentMethod,
+      status: 'completed',
+      notes: `Mavjud qarzdan ${formatUZS(paidAmount)} so‘ndirildi. Qoldiq qarz: ${formatUZS(newDebt)}`,
+    };
+
+    setPayments((prev) => [payment, ...prev]);
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, debtAmount: newDebt } : m))
+    );
+
+    if (newDebt === 0) {
+      showToast(`Mijozning barcha qarzlari to‘liq yopildi! Kvitansiya: ${payment.receiptNumber}`, 'success');
+    } else {
+      showToast(`Qarzning bir qismi to‘landi. Qoldiq qarz: ${formatUZS(newDebt)}`, 'info');
+    }
   };
 
   // Product actions
@@ -635,6 +703,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         deletePlan,
         togglePlanStatus,
         addPayment,
+        settleMemberDebt,
         addProduct,
         updateProduct,
         deleteProduct,

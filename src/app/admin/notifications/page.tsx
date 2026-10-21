@@ -138,9 +138,16 @@ export default function NotificationsPage() {
                   )}
                 </TableCell>
 
-                {/* Price */}
-                <TableCell className="text-xs font-black text-lime-400">
-                  {formatUZS(item.amount)}
+                {/* Price & Debt */}
+                <TableCell>
+                  <div className="text-xs font-black text-lime-400">
+                    {formatUZS(item.amount)}
+                  </div>
+                  {item.debtAmount && item.debtAmount > 0 && (
+                    <div className="text-[10px] font-extrabold text-rose-400 mt-0.5">
+                      ⚠️ Qarz: {formatUZS(item.debtAmount)}
+                    </div>
+                  )}
                 </TableCell>
 
                 {/* Status Badge */}
