@@ -16,7 +16,6 @@ import {
   ExternalLink,
   LogOut,
   Dumbbell,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFitnesFlow } from '@/context/fitnes-context';
@@ -82,10 +81,10 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 h-full bg-[#0d131f] border-r border-zinc-800/80 flex flex-col justify-between select-none">
-      <div>
+    <aside className="w-64 h-full bg-[#0d131f] border-r border-zinc-800/80 flex flex-col justify-between select-none overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Brand Header */}
-        <div className="h-18 px-6 flex items-center gap-3 border-b border-zinc-800/60 bg-zinc-950/40">
+        <div className="h-18 px-6 flex items-center gap-3 border-b border-zinc-800/60 bg-zinc-950/40 sticky top-0 z-10">
           <div className="w-10 h-10 rounded-xl bg-lime-500/15 border border-lime-500/30 flex items-center justify-center text-lime-400 shadow-[0_0_15px_rgba(132,204,22,0.2)]">
             <Dumbbell className="w-5 h-5 text-lime-400" />
           </div>
@@ -152,27 +151,17 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
       </div>
 
       {/* Footer Info & Links */}
-      <div className="p-4 border-t border-zinc-800/60 bg-zinc-950/30 space-y-2">
-        <div className="p-3 rounded-xl bg-lime-950/20 border border-lime-500/20 mb-3">
-          <div className="flex items-center gap-2 text-lime-400 text-xs font-semibold mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Quva • Akbarobod Filiali</span>
-          </div>
-          <p className="text-[11px] text-zinc-400 leading-snug">
-            Bugungi smena: 07:00 – 23:00. Barcha zonalar faol.
-          </p>
-        </div>
-
+      <div className="p-3 border-t border-zinc-800/60 bg-zinc-950/40 space-y-1 shrink-0">
         <Link
           href="/"
-          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
           <span>Mijozlar saytiga o‘tish</span>
         </Link>
         <Link
           href="/admin/login"
-          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400/80 hover:text-rose-300 hover:bg-rose-950/30 rounded-lg transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400/90 hover:text-rose-300 hover:bg-rose-950/40 rounded-xl transition-colors"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Tizimdan chiqish</span>
