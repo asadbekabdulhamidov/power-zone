@@ -77,7 +77,7 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={isSuccess ? 'Arizangiz Qabul Qilindi!' : 'FitnesFlow A’zosi Bo‘ling'}
+      title={isSuccess ? 'Arizangiz Qabul Qilindi!' : 'Power Zone A’zosi Bo‘ling'}
       maxWidth="md"
     >
       {isSuccess ? (
@@ -170,7 +170,7 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
           </div>
 
           <p className="text-[11px] text-zinc-400 leading-snug">
-            Tugmani bosish orqali FitnesFlow klub qoidalariga rozilik bildirasiz.
+            Tugmani bosish orqali Power Zone klub qoidalariga rozilik bildirasiz.
           </p>
 
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">

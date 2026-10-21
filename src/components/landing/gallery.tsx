@@ -74,7 +74,7 @@ export function LandingGallery() {
               <span>Fotogalereya</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              FitnesFlow Atmosferasi
+              Power Zone Atmosferasi
             </h2>
             <p className="mt-2 text-sm text-zinc-400 max-w-xl">
               Yuqori darajadagi gigiyena, qulay yorug‘lik va jahon standartlariga mos sport maydoni.

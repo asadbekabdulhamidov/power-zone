@@ -16,11 +16,11 @@ export function LandingFooter() {
                 <Dumbbell className="w-5 h-5" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-white">
-                FITNES<span className="text-lime-400">FLOW</span>
+                POWER <span className="text-lime-400">ZONE</span>
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm">
-              Toshkentdagi yuqori darajadagi fitnes klubi. Zamonaviy trenajyorlar, individual murabbiy nazorati, fin saunasi va sport bar.
+              Farg‘ona viloyati, Quva tumani, Akbarobod markazidagi yuqori darajadagi fitnes klubi. Zamonaviy trenajyorlar, individual murabbiy nazorati, fin saunasi va sport bar.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
@@ -142,7 +142,7 @@ export function LandingFooter() {
 
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <p>© {new Date().getFullYear()} FitnesFlow. Barcha huquqlar himoyalangan. Toshkent, O‘zbekiston.</p>
+          <p>© {new Date().getFullYear()} Power Zone. Barcha huquqlar himoyalangan. Farg‘ona viloyati, Quva tumani, Akbarobod.</p>
           <div className="flex items-center gap-6">
             <span className="hover:text-zinc-400 cursor-pointer">Maxfiylik siyosati</span>
             <span className="hover:text-zinc-400 cursor-pointer">Foydalanish qoidalari</span>

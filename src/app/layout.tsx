@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FitnesFlow — Toshkentdagi Zamonaviy Fitnes Klub va Boshqaruv Tizimi',
-  description: 'FitnesFlow fitness klubi va ma’muriyat boshqaruv tizimi. A’zolar, to‘lovlar, tariflar va mahsulotlar nazorati.',
-  keywords: ['fitness uzbekistan', 'fitnes toshkent', 'sport zali', 'fitnes klub boshqaruvi', 'fitnesflow'],
+  title: 'Power Zone — Farg‘ona, Quva (Akbarobod) Zamonaviy Fitnes Klub va Boshqaruv Tizimi',
+  description: 'Power Zone fitnes klubi va ma’muriyat boshqaruv tizimi. Manzil: Farg‘ona viloyati, Quva tumani, Akbarobod markazi.',
+  keywords: ['power zone', 'fitnes quva', 'sport zali akbarobod', 'fargona fitnes', 'fitnes klub boshqaruvi'],
 };
 
 export default function RootLayout({

@@ -254,7 +254,7 @@ export default function NotificationsPage() {
 
           <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-400 flex items-center justify-between">
             <span>SMS Shabloni:</span>
-            <span className="text-lime-400 font-mono">&ldquo;Hurmatli [Ism], FitnesFlow abonementingiz...&rdquo;</span>
+            <span className="text-lime-400 font-mono">&ldquo;Hurmatli [Ism], Power Zone abonementingiz...&rdquo;</span>
           </div>
         </div>
       </div>

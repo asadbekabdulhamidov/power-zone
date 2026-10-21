@@ -72,7 +72,7 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-lg tracking-tight text-white">
-                FITNES<span className="text-lime-400">FLOW</span>
+                POWER <span className="text-lime-400">ZONE</span>
               </span>
             </div>
             <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
@@ -136,7 +136,7 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
         <div className="p-3 rounded-xl bg-lime-950/20 border border-lime-500/20 mb-3">
           <div className="flex items-center gap-2 text-lime-400 text-xs font-semibold mb-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Toshkent Filiali</span>
+            <span>Quva • Akbarobod Filiali</span>
           </div>
           <p className="text-[11px] text-zinc-400 leading-snug">
             Bugungi smena: 07:00 – 23:00. Barcha zonalar faol.

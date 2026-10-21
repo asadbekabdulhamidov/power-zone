@@ -25,7 +25,7 @@ export function LandingLocationContact() {
             Bizni Oson Toping
           </h2>
           <p className="mt-3 text-sm text-zinc-400">
-            Toshkentning markaziy qismida, metro va asosiy yo‘llar kesishmasida joylashganmiz.
+            Farg‘ona viloyati, Quva tumani markaziy qismida, Akbarobod markazida joylashganmiz.
           </p>
         </div>
 
@@ -41,10 +41,10 @@ export function LandingLocationContact() {
                 <div>
                   <h4 className="font-bold text-white text-base">Manzilimiz</h4>
                   <p className="text-xs text-zinc-300 mt-1 leading-relaxed">
-                    Toshkent shahri, Yunusobod tumani, Amir Temur shox ko‘chasi, 42-uy
+                    Farg‘ona viloyati, Quva tumani, Akbarobod markazi
                   </p>
                   <p className="text-[11px] text-lime-400 font-semibold mt-1">
-                    Mo‘ljal: Bodomzor metro bekati yonida, Orient Business Center 1-qavat
+                    Mo‘ljal: Akbarobod markazi, asosiy yo‘l bo‘yida
                   </p>
                 </div>
               </div>
@@ -101,11 +101,11 @@ export function LandingLocationContact() {
                   <span>+998 (71) 200-44-22 (Call-markaz)</span>
                 </a>
                 <a
-                  href="mailto:info@fitnesflow.uz"
+                  href="mailto:info@powerzone.uz"
                   className="flex items-center gap-2 text-zinc-300 hover:text-lime-400 transition-colors font-medium py-1"
                 >
                   <Mail className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>info@fitnesflow.uz</span>
+                  <span>info@powerzone.uz</span>
                 </a>
               </div>
             </div>
@@ -134,9 +134,9 @@ export function LandingLocationContact() {
                 </div>
                 <div className="mt-3 px-3.5 py-1.5 rounded-xl bg-zinc-950/95 border border-lime-500/50 shadow-2xl backdrop-blur-md text-center">
                   <span className="font-extrabold text-xs text-white block">
-                    FITNES<span className="text-lime-400">FLOW</span>
+                    POWER <span className="text-lime-400">ZONE</span>
                   </span>
-                  <span className="text-[10px] text-zinc-400">Yunusobod, Amir Temur 42</span>
+                  <span className="text-[10px] text-zinc-400">Quva, Akbarobod markazi</span>
                 </div>
               </div>
             </div>
@@ -158,7 +158,7 @@ export function LandingLocationContact() {
 
               <div className="flex items-center gap-2.5">
                 <a
-                  href="https://maps.google.com/?q=Amir+Temur+Street+Tashkent"
+                  href="https://maps.google.com/?q=Akbarobod+Quva+Fergana"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-semibold text-white flex items-center gap-1.5 transition-colors"
@@ -168,7 +168,7 @@ export function LandingLocationContact() {
                 </a>
 
                 <a
-                  href="https://yandex.uz/maps"
+                  href="https://yandex.uz/maps/?text=Akbarobod+Quva"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 rounded-xl bg-lime-500 hover:bg-lime-400 text-zinc-950 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-md shadow-lime-500/20"

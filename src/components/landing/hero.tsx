@@ -12,7 +12,7 @@ export function LandingHero() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=2000&q=85"
-          alt="FitnesFlow zamonaviy fitnes zali"
+          alt="Power Zone zamonaviy fitnes zali"
           className="w-full h-full object-cover object-center brightness-[0.25] scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#090d16] via-[#090d16]/75 to-transparent" />
@@ -24,7 +24,7 @@ export function LandingHero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-lime-500/15 border border-lime-500/30 text-lime-400 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-md">
             <Flame className="w-3.5 h-3.5 text-lime-400" />
-            <span>Toshkentning Eng Innovatsion Fitnes Klubi</span>
+            <span>Farg‘ona, Quva • Akbaroboddagi Eng Zamonaviy Fitnes Klubi</span>
           </div>
 
           {/* Main Uzbek Headline */}
@@ -34,7 +34,7 @@ export function LandingHero() {
 
           {/* Description */}
           <p className="mt-6 text-base sm:text-lg text-zinc-300 leading-relaxed font-normal max-w-2xl">
-            FitnesFlow — zamonaviy Italiya va Germaniya trenajyorlari, individual yondashuv va qulay sharoitlar bilan Toshkentdagi yangi avlod sport zali. Haftalik va oylik moslashuvchan tariflar bilan mashg‘ulotlarni bugunoq boshlang.
+            Power Zone — zamonaviy Italiya va Germaniya trenajyorlari, individual yondashuv va qulay sharoitlar bilan Farg‘ona viloyati Quva tumani (Akbarobod markazi)dagi yangi avlod sport zali. Haftalik va oylik moslashuvchan tariflar bilan mashg‘ulotlarni bugunoq boshlang.
           </p>
 
           {/* CTA Buttons */}

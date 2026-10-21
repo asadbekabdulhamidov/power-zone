@@ -420,7 +420,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: 'prod-006',
-    name: 'FitnesFlow Sport Sochig‘i',
+    name: 'Power Zone Sport Sochig‘i',
     imageUrl: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=80',
     category: 'accessories',
     categoryLabel: 'Aksessuarlar',

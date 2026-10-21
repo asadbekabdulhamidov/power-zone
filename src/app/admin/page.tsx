@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
             Xush kelibsiz, Administrator! 👋
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
-            FitnesFlow klubingizning bugungi ko‘rsatkichlari va tushumlar hisoboti.
+            Power Zone klubingizning bugungi ko‘rsatkichlari va tushumlar hisoboti.
           </p>
         </div>
         <div className="flex items-center gap-2.5">

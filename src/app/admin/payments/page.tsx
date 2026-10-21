@@ -258,13 +258,13 @@ export default function PaymentsPage() {
                   <Dumbbell className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-black tracking-tight text-white uppercase">
-                  FITNESFLOW FITNESS CLUB
+                  POWER ZONE FITNESS CLUB
                 </h3>
                 <p className="text-[11px] text-zinc-400">
-                  Toshkent sh., Amir Temur shox ko‘chasi, 42-uy
+                  Farg‘ona viloyati, Quva tumani, Akbarobod markazi
                 </p>
                 <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                  Tel: +998 71 200 44 22 • STIR: 308942110
+                  Tel: +998 (71) 200 44 22 • STIR: 308942110
                 </p>
               </div>
 
@@ -347,7 +347,7 @@ export default function PaymentsPage() {
                   ||||| | |||||||| ||| |||||| ||||||||| |||
                 </p>
                 <p className="text-[10px] text-zinc-500 mt-1">
-                  FitnesFlow bilan birga sog‘lom hayot sari!
+                  Power Zone bilan birga sog‘lom hayot sari!
                 </p>
               </div>
             </div>

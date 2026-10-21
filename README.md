@@ -1,6 +1,6 @@
-# FitnesFlow — Fitness Club Management Platform (O‘zbekiston)
+# Power Zone — Fitness Club Management Platform
 
-**FitnesFlow** — O‘zbekistondagi zamonaviy fitnes zallari va sport klublari uchun maxsus ishlab chiqilgan, barcha asosiy boshqaruv jarayonlarini raqamlashtiruvchi professional frontend platforma.
+**Power Zone** — Farg‘ona viloyati, Quva tumani (Akbarobod markazi)dagi zamonaviy fitnes klubi uchun ishlab chiqilgan, barcha asosiy boshqaruv jarayonlarini raqamlashtiruvchi professional frontend platforma.
 
 Loyiha ikki asosiy qismdan iborat:
 1. **Ommaviy veb-sayt (Landing page)** — Klubga tashrif buyuruvchilar, potentsial mijozlar, tariflar, galereya va sport tovarlari namoyishi uchun.
@@ -73,8 +73,8 @@ Brauzerda [http://localhost:3000](http://localhost:3000) manzilini oching.
 
 ### Admin Tizimiga Kirish:
 - **URL**: `http://localhost:3000/admin/login`
-- **Email**: `admin@fitnesflow.uz`
-- **Parol**: `fitnes2026!` (yoki login sahifasidagi *"Demo login/parolni avtomatik to‘ldirish"* tugmasini bosing).
+- **Email**: `admin@powerzone.uz`
+- **Parol**: `power2026!` (yoki login sahifasidagi *"Demo login/parolni avtomatik to‘ldirish"* tugmasini bosing).
 
 ---
 

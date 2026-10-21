@@ -26,10 +26,10 @@ export function LandingNavbar() {
           </div>
           <div>
             <span className="font-extrabold text-xl tracking-tight text-white">
-              FITNES<span className="text-lime-400">FLOW</span>
+              POWER <span className="text-lime-400">ZONE</span>
             </span>
             <span className="block text-[9px] uppercase tracking-widest text-zinc-400 font-bold -mt-0.5">
-              Toshkent • Premium Gym
+              Quva • Akbarobod Markazi
             </span>
           </div>
         </Link>

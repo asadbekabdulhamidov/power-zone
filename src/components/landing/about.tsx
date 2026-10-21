@@ -33,7 +33,7 @@ export function LandingAbout() {
     {
       icon: ShieldCheck,
       title: 'Shaffof Boshqaruv va Qulaylik',
-      desc: 'Abonementingiz, tashriflaringiz va to‘lovlaringiz FitnesFlow raqamli tizimida 100% aniq va shaffof qayd etiladi.',
+      desc: 'Abonementingiz, tashriflaringiz va to‘lovlaringiz Power Zone raqamli tizimida 100% aniq va shaffof qayd etiladi.',
     },
   ];
 
@@ -49,7 +49,7 @@ export function LandingAbout() {
             Natijaga Intiluvchilar Uchun Mukammal Makon
           </h2>
           <p className="mt-4 text-sm sm:text-base text-zinc-400 leading-relaxed">
-            Biz shunchaki sport zali emasmiz. FitnesFlow — bu sog‘lom turmush tarzi, yuqori kayfiyat va o‘z maqsadlariga erishayotgan hamfikrlar hamjamiyati.
+            Biz shunchaki sport zali emasmiz. Power Zone — bu sog‘lom turmush tarzi, yuqori kayfiyat va o‘z maqsadlariga erishayotgan hamfikrlar hamjamiyati.
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export function LandingAbout() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1000&q=80"
-                alt="FitnesFlow mashg'ulot maydoni"
+                alt="Power Zone mashg'ulot maydoni"
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>

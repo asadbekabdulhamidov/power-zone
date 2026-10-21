@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const loginSchema = z.object({
-  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@fitnesflow.uz)'),
+  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@powerzone.uz)'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak'),
   rememberMe: z.boolean(),
 });
@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      login: 'admin@fitnesflow.uz',
+      login: 'admin@powerzone.uz',
       password: 'password123',
       rememberMe: true,
     },
@@ -51,8 +51,8 @@ export default function AdminLoginPage() {
   };
 
   const handleFillDemo = () => {
-    setValue('login', 'admin@fitnesflow.uz');
-    setValue('password', 'fitnes2026!');
+    setValue('login', 'admin@powerzone.uz');
+    setValue('password', 'power2026!');
     setValue('rememberMe', true);
   };
 
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
             <Dumbbell className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Fitnes<span className="text-lime-400">Flow</span> Admin
+            Power <span className="text-lime-400">Zone</span> Admin
           </h1>
           <p className="text-sm text-zinc-400 mt-1.5">
             Klub ma’muriyati va boshqaruv tizimiga kirish
@@ -174,7 +174,7 @@ export default function AdminLoginPage() {
 
         {/* Footer info */}
         <p className="text-center text-xs text-zinc-500 mt-6">
-          © {new Date().getFullYear()} FitnesFlow. Barcha huquqlar himoyalangan.
+          © {new Date().getFullYear()} Power Zone. Barcha huquqlar himoyalangan.
         </p>
       </div>
     </div>

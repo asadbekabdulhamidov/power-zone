@@ -48,8 +48,8 @@ export default function AdminLayout({
   }
 
   const currentRouteMeta = routeTitles[pathname] || {
-    title: 'FitnesFlow Admin',
-    subtitle: 'Klub boshqaruv tizimi',
+    title: 'Power Zone Admin',
+    subtitle: 'Klub boshqaruv tizimi (Quva, Akbarobod)',
   };
 
   return (
