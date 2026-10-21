@@ -46,6 +46,10 @@ This document captures confirmed architectural decisions, technical choices, bus
 - **Status**: Confirmed
 - **Rule**: Notifications are categorized into three distinct tabs: Due Today (0 days left), Due Tomorrow (1 day left), and Overdue (< 0 days).
 
+### DEC-010: Official Brand Name & Geographic Location
+- **Status**: Confirmed & Implemented
+- **Decision**: The fitness club is officially branded as **Power Zone** (styled in UI as `POWER ZONE`). The physical location is confirmed as **Farg‘ona viloyati, Quva tumani, Akbarobod markazi**. All customer-facing banners, navigation logos, address cards, official receipt headers, and metadata are aligned to this identity.
+
 ---
 
 ## 3. Proposals Pending Approval
