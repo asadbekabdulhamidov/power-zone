@@ -111,6 +111,18 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Real-time Badges**: Unread message count badges in admin sidebar and topbar.
 - [x] **Manual Inquiry Logger**: Modal to allow gym receptionists/admins to log phone or walk-in inquiries manually.
 
+### L. Custom Confirmation & Delete Modal System (`src/components/ui/confirm-delete-modal.tsx`)
+- [x] **Zero Native Browser Alerts**: Replaced all native browser `confirm(...)` alert popups across the entire codebase with modern, styled modal dialogs.
+- [x] **Item Preview Showcase**: The delete confirmation modal dynamically displays the exact item being deleted (e.g. Member name, photo, phone, plan, debt; Product image, category, price, stock; Membership plan price, duration, members count; Inquiry message sender, phone, text preview; Facility card title and description).
+- [x] **Dual Danger & Warning Variants**: Supports destructive danger style (red accents, trash icon) for permanent deletions and warning style (amber accents, refresh icon) for system factory resets.
+- [x] **Integrated Across All Modules**:
+  - `/admin/members`: Deleting members from table and member detail slideout.
+  - `/admin/products`: Deleting products and resetting product catalog photos.
+  - `/admin/memberships`: Deleting membership plans.
+  - `/admin/messages`: Deleting customer inquiries.
+  - `/admin/website`: Deleting facility cards and resetting CMS content.
+  - `/admin/settings` & `AdminTopbar`: Resetting system mock demo data.
+
 ---
 
 ## 2. Partially Implemented Features

@@ -20,6 +20,7 @@ import { Select } from '@/components/ui/select';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { MembershipPlan, AccessType } from '@/types';
 import { formatUZS, parseNumericInput } from '@/lib/utils';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function MembershipsPage() {
   const { plans, members, addPlan, updatePlan, deletePlan, togglePlanStatus } = useFitnesFlow();
@@ -28,6 +29,7 @@ export default function MembershipsPage() {
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const [editPrice, setEditPrice] = useState<number | ''>(0);
   const [editDurationDays, setEditDurationDays] = useState<number | ''>(30);
+  const [planToDelete, setPlanToDelete] = useState<MembershipPlan | null>(null);
 
   // Add plan form state
   const [name, setName] = useState('');
@@ -315,13 +317,9 @@ export default function MembershipsPage() {
                     <Archive className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`"${plan.name}" tarifini o‘chirishni xohlaysizmi?`)) {
-                        deletePlan(plan.id);
-                      }
-                    }}
+                    onClick={() => setPlanToDelete(plan)}
                     title="O‘chirish"
-                    className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors"
+                    className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -628,6 +626,54 @@ export default function MembershipsPage() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Delete Membership Plan Confirmation Modal */}
+      {planToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!planToDelete}
+          onClose={() => setPlanToDelete(null)}
+          onConfirm={() => {
+            if (planToDelete) {
+              deletePlan(planToDelete.id);
+              setPlanToDelete(null);
+            }
+          }}
+          title="Tarif Rejasini O‘chirish"
+          description="Haqiqatan ham ushbu tarif rejasini tizimdan butunlay o‘chirmoqchimisiz?"
+          itemType="Tarif Rejasi"
+          itemName={planToDelete.name}
+          itemDetails={
+            <div className="space-y-1 text-xs text-zinc-300">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Oylik narx:</span>
+                <span className="font-extrabold text-lime-400 text-sm">
+                  {formatUZS(planToDelete.price)} / oy
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Davomiyligi:</span>
+                <span className="text-zinc-200 font-medium">
+                  {planToDelete.durationDays} kun (
+                  {planToDelete.accessType === 'monthly_unlimited'
+                    ? 'Oylik cheklanmagan'
+                    : planToDelete.accessType === 'weekly_3_days'
+                    ? 'Haftasiga 3 kun'
+                    : 'Bir martalik'}
+                  )
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-zinc-800/80">
+                <span className="text-zinc-400">Biriktirilgan a’zolar:</span>
+                <span className="text-white font-bold">
+                  {members.filter((m) => m.membershipPlanId === planToDelete.id).length} ta a’zo
+                </span>
+              </div>
+            </div>
+          }
+          warningText="Tarif o‘chirilganda mavjud a’zolarning kelishilgan narxlari o‘zgarmaydi, ammo yangi a’zolar ushbu tarifni tanlay olmaydi."
+          confirmText="Ha, tarifni o‘chirish"
+        />
       )}
     </div>
   );

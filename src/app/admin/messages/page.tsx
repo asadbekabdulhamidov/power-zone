@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { Badge } from '@/components/ui/badge';
 import { useFitnesFlow } from '@/context/fitnes-context';
-import { MessageStatus } from '@/types';
+import { MessageStatus, ContactMessage } from '@/types';
 import { formatDateUz } from '@/lib/utils';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function AdminMessagesPage() {
   const {
@@ -35,6 +36,7 @@ export default function AdminMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | MessageStatus>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<ContactMessage | null>(null);
 
   // Manual inquiry form state
   const [name, setName] = useState('');
@@ -307,12 +309,8 @@ export default function AdminMessagesPage() {
 
                       <button
                         type="button"
-                        onClick={() => {
-                          if (confirm(`Ushbu murojaatni o‘chirishni tasdiqlaysizmi?`)) {
-                            deleteContactMessage(msg.id);
-                          }
-                        }}
-                        className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors ml-auto md:ml-0"
+                        onClick={() => setMessageToDelete(msg)}
+                        className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors ml-auto md:ml-0 cursor-pointer"
                         title="O‘chirish"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -397,6 +395,44 @@ export default function AdminMessagesPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Delete Inquiry Confirmation Modal */}
+      {messageToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!messageToDelete}
+          onClose={() => setMessageToDelete(null)}
+          onConfirm={() => {
+            if (messageToDelete) {
+              deleteContactMessage(messageToDelete.id);
+              setMessageToDelete(null);
+            }
+          }}
+          title="Murojaatni O‘chirish"
+          description="Haqiqatan ham ushbu mijoz murojaatini tizimdan butunlay o‘chirmoqchimisiz?"
+          itemType="Mijoz Murojaati"
+          itemName={messageToDelete.fullName}
+          itemDetails={
+            <div className="space-y-1.5 text-xs text-zinc-300">
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Telefon:</span>
+                <span className="font-bold text-white">{messageToDelete.phone}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-400">Mavzu:</span>
+                <span className="text-lime-400 font-medium">{messageToDelete.subject}</span>
+              </div>
+              <div className="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs italic">
+                &ldquo;{messageToDelete.message}&rdquo;
+              </div>
+              <div className="text-[11px] text-zinc-500 pt-1">
+                Yuborilgan vaqti: {formatDateUz(messageToDelete.createdAt)}
+              </div>
+            </div>
+          }
+          warningText="Ushbu murojaat o‘chirilgach, uning yozuvlari va matni qayta tiklanmaydi."
+          confirmText="Ha, murojaatni o‘chirish"
+        />
+      )}
     </div>
   );
 }

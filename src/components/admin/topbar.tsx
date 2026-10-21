@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Menu,
@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { formatDateUz } from '@/lib/utils';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 interface TopbarProps {
   onToggleMobile: () => void;
@@ -30,6 +31,7 @@ export function AdminTopbar({
   onOpenQuickPayment,
 }: TopbarProps) {
   const { notifications, resetToDefault, adminProfile, contactMessages } = useFitnesFlow();
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const unreadMessagesCount = contactMessages.filter((m) => m.status === 'new').length;
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -78,13 +80,9 @@ export function AdminTopbar({
 
         {/* Reset Mock Data demo button */}
         <button
-          onClick={() => {
-            if (confirm("Hamma o'zgarishlarni boshlang'ich mock holatga qaytarasizmi?")) {
-              resetToDefault();
-            }
-          }}
+          onClick={() => setIsResetConfirmOpen(true)}
           title="Demo ma'lumotlarni qayta tiklash"
-          className="p-2 text-zinc-400 hover:text-lime-400 hover:bg-zinc-800/60 rounded-xl transition-colors border border-transparent hover:border-zinc-700"
+          className="p-2 text-zinc-400 hover:text-lime-400 hover:bg-zinc-800/60 rounded-xl transition-colors border border-transparent hover:border-zinc-700 cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -146,6 +144,25 @@ export function AdminTopbar({
           </div>
         </Link>
       </div>
+
+      {/* Global Reset Mock Data Modal */}
+      {isResetConfirmOpen && (
+        <ConfirmDeleteModal
+          isOpen={isResetConfirmOpen}
+          onClose={() => setIsResetConfirmOpen(false)}
+          onConfirm={() => {
+            resetToDefault();
+            setIsResetConfirmOpen(false);
+          }}
+          title="Demo Ma’lumotlarni Qayta Tiklash"
+          description="Barcha o‘zgarishlarni boshlang‘ich namunaviy mock holatga qaytarmoqchimisiz?"
+          itemType="Tizim Ma’lumotlari"
+          itemName="Barcha A’zolar, To‘lovlar, Mahsulotlar & Sayt Sozlamalari"
+          warningText="Kiritilgan barcha yangi a’zolar, to‘lovlar va mahsulotlar o‘chirilib, tizim dastlabki toza holatga qaytadi."
+          confirmText="Ha, qayta tiklansin"
+          variant="warning"
+        />
+      )}
     </header>
   );
 }

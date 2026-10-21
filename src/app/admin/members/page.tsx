@@ -30,6 +30,7 @@ import { useFitnesFlow } from '@/context/fitnes-context';
 import { Member, MemberStatus, PaymentMethod } from '@/types';
 import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference, parseNumericInput } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -71,6 +72,7 @@ export default function MembersPage() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [paymentModalMemberId, setPaymentModalMemberId] = useState<string | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   // Form states for Add Member
   const [formName, setFormName] = useState('');
@@ -711,13 +713,9 @@ export default function MembersPage() {
 
                       {/* Delete */}
                       <button
-                        onClick={() => {
-                          if (confirm(`Haqiqatan ham "${member.fullName}"ni o‘chirasizmi?`)) {
-                            deleteMember(member.id);
-                          }
-                        }}
+                        onClick={() => setMemberToDelete(member)}
                         title="O‘chirish"
-                        className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors"
+                        className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1529,15 +1527,31 @@ export default function MembersPage() {
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => recordMemberVisit(viewingMember.id)}
-              >
-                <Dumbbell className="w-3.5 h-3.5" />
-                <span>Tashrifni qayd etish (+1)</span>
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => recordMemberVisit(viewingMember.id)}
+                >
+                  <Dumbbell className="w-3.5 h-3.5" />
+                  <span>Tashrifni qayd etish (+1)</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const toDel = viewingMember;
+                    setViewingMember(null);
+                    setMemberToDelete(toDel);
+                  }}
+                  className="text-rose-400 hover:text-rose-300 hover:bg-rose-950/40"
+                  title="A’zoni o‘chirish"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1" />
+                  <span>O‘chirish</span>
+                </Button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <Button
@@ -1571,6 +1585,51 @@ export default function MembersPage() {
           isOpen={!!paymentModalMemberId}
           onClose={() => setPaymentModalMemberId(null)}
           preselectedMemberId={paymentModalMemberId}
+        />
+      )}
+
+      {/* Delete Member Confirmation Modal */}
+      {memberToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!memberToDelete}
+          onClose={() => setMemberToDelete(null)}
+          onConfirm={() => {
+            if (memberToDelete) {
+              deleteMember(memberToDelete.id);
+              setMemberToDelete(null);
+            }
+          }}
+          title="A’zoni O‘chirish"
+          description="Haqiqatan ham ushbu mijozni tizimdan o‘chirmoqchimisiz?"
+          itemType="A’zo"
+          itemName={memberToDelete.fullName}
+          itemDetails={
+            <div className="flex items-center gap-3 text-xs text-zinc-300">
+              <div className="w-11 h-11 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={memberToDelete.photoUrl}
+                  alt={memberToDelete.fullName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <p className="font-semibold text-white">
+                  Telefon: {formatPhoneNumber(memberToDelete.phone)}
+                </p>
+                <p className="text-zinc-400">
+                  Tarif: <span className="text-lime-400 font-medium">{memberToDelete.membershipPlanName}</span> • Muddati: {formatDateUz(memberToDelete.expiryDate)}
+                </p>
+                {memberToDelete.debtAmount && memberToDelete.debtAmount > 0 ? (
+                  <p className="text-rose-400 font-bold">
+                    ⚠️ Qarz: {formatUZS(memberToDelete.debtAmount)}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          }
+          warningText="Ushbu a’zoni o‘chirishingiz bilan uning to‘lov tarixlari va barcha tashrif yozuvlari butunlay o‘chiriladi."
+          confirmText="Ha, a’zoni o‘chirish"
         />
       )}
     </div>

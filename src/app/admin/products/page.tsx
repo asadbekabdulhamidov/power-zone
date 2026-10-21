@@ -32,6 +32,7 @@ import {
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { Product, ProductCategory } from '@/types';
 import { formatUZS, parseNumericInput } from '@/lib/utils';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 // Verified, high-definition preset photos for gym products
 const PRESET_PRODUCT_IMAGES: {
@@ -146,6 +147,8 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editPrice, setEditPrice] = useState<number | ''>(0);
   const [editStock, setEditStock] = useState<number | ''>(0);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // Add Product form state
   const [formName, setFormName] = useState('');
@@ -432,15 +435,7 @@ export default function ProductsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
-            onClick={() => {
-              if (
-                confirm(
-                  'Barcha standart mahsulotlar va rasmlarni yangilamoqchimisiz? (Bu buzilgan rasmlarni tuzatadi)'
-                )
-              ) {
-                resetProducts();
-              }
-            }}
+            onClick={() => setIsResetConfirmOpen(true)}
             className="border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white"
             title="Standart mahsulotlar va rasmlarni yangilash"
           >
@@ -645,15 +640,7 @@ export default function ProductsPage() {
 
                     {/* Delete */}
                     <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            `Haqiqatan ham "${product.name}" mahsulotini o‘chirishni xohlaysizmi?`
-                          )
-                        ) {
-                          deleteProduct(product.id);
-                        }
-                      }}
+                      onClick={() => setProductToDelete(product)}
                       title="O‘chirish"
                       className="p-1.5 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors cursor-pointer"
                     >
@@ -1253,6 +1240,65 @@ export default function ProductsPage() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Delete Product Confirmation Modal */}
+      {productToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!productToDelete}
+          onClose={() => setProductToDelete(null)}
+          onConfirm={() => {
+            if (productToDelete) {
+              deleteProduct(productToDelete.id);
+              setProductToDelete(null);
+            }
+          }}
+          title="Mahsulotni O‘chirish"
+          description="Haqiqatan ham ushbu mahsulotni ombordan o‘chirishni xohlaysizmi?"
+          itemType="Mahsulot"
+          itemName={productToDelete.name}
+          itemDetails={
+            <div className="flex items-center gap-3 text-xs text-zinc-300">
+              <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={productToDelete.imageUrl}
+                  alt={productToDelete.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="space-y-0.5 min-w-0">
+                <p className="font-semibold text-white">
+                  Kategoriya: <span className="text-lime-400">{categoryLabels[productToDelete.category]}</span>
+                </p>
+                <p className="text-zinc-400">
+                  Narxi: <strong className="text-white">{formatUZS(productToDelete.price)}</strong> • Qoldiq: {productToDelete.stockQuantity} {productToDelete.unit || 'dona'}
+                </p>
+              </div>
+            </div>
+          }
+          warningText="Ushbu mahsulot o‘chirilgach, u ommaviy landing sahifasidagi 'Fitnes Bar' vitrinasidan ham olib tashlanadi."
+          confirmText="Ha, mahsulotni o‘chirish"
+        />
+      )}
+
+      {/* Reset Default Products Confirmation Modal */}
+      {isResetConfirmOpen && (
+        <ConfirmDeleteModal
+          isOpen={isResetConfirmOpen}
+          onClose={() => setIsResetConfirmOpen(false)}
+          onConfirm={() => {
+            resetProducts();
+            setIsResetConfirmOpen(false);
+          }}
+          title="Standart Mahsulotlarni Qaytarish"
+          description="Barcha standart mahsulotlar va rasmlarni dastlabki holatiga qaytarmoqchimisiz?"
+          itemType="Zavod Sozlamalari"
+          itemName="Standart Mahsulotlar & Yangi Rasmlar"
+          warningText="Bu amal barcha mahsulotlar ro‘yxatini asl namunalarga qaytaradi va buzilgan rasmlarni yangilaydi."
+          confirmText="Ha, yangilansin"
+          variant="warning"
+        />
       )}
     </div>
   );

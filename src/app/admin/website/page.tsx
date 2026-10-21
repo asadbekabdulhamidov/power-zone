@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { WebsiteFeature, WebsiteStat } from '@/types';
+import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 type WebsiteTab = 'hero' | 'stats' | 'features' | 'banner' | 'contact';
 
@@ -87,6 +88,31 @@ export default function WebsiteAdminPage() {
   // Feature Modals
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [editingFeature, setEditingFeature] = useState<WebsiteFeature | null>(null);
+  const [featureToDelete, setFeatureToDelete] = useState<WebsiteFeature | null>(null);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
+  const handleConfirmReset = () => {
+    resetToDefault();
+    setHeroBadge(websiteContent.hero.badge);
+    setHeroTitle(websiteContent.hero.title);
+    setHeroSubtitle(websiteContent.hero.subtitle);
+    setHeroBullets([...websiteContent.hero.bullets]);
+    setStatsData([...websiteContent.stats]);
+    setBannerBadge(websiteContent.banner.badge);
+    setBannerTitle(websiteContent.banner.title);
+    setBannerDesc(websiteContent.banner.desc);
+    setBannerLinkText(websiteContent.banner.linkText);
+    setContactPhone(websiteContent.contact.phone);
+    setContactEmail(websiteContent.contact.email);
+    setContactAddress(websiteContent.contact.address);
+    setContactLandmark(websiteContent.contact.landmark);
+    setWorkingWeekdays(websiteContent.contact.workingHoursWeekdays);
+    setWorkingSunday(websiteContent.contact.workingHoursSunday);
+    setTelegramChannel(websiteContent.contact.telegramChannel);
+    setTelegramAdmin(websiteContent.contact.telegramAdmin);
+    setInstagram(websiteContent.contact.instagram);
+    setIsResetConfirmOpen(false);
+  };
 
   const [featTitle, setFeatTitle] = useState('');
   const [featDesc, setFeatDesc] = useState('');
@@ -206,30 +232,8 @@ export default function WebsiteAdminPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              if (confirm('Barcha sayt ma’lumotlarini dastlabki standart holatga qaytarasizmi?')) {
-                resetToDefault();
-                setHeroBadge(websiteContent.hero.badge);
-                setHeroTitle(websiteContent.hero.title);
-                setHeroSubtitle(websiteContent.hero.subtitle);
-                setHeroBullets([...websiteContent.hero.bullets]);
-                setStatsData([...websiteContent.stats]);
-                setBannerBadge(websiteContent.banner.badge);
-                setBannerTitle(websiteContent.banner.title);
-                setBannerDesc(websiteContent.banner.desc);
-                setBannerLinkText(websiteContent.banner.linkText);
-                setContactPhone(websiteContent.contact.phone);
-                setContactEmail(websiteContent.contact.email);
-                setContactAddress(websiteContent.contact.address);
-                setContactLandmark(websiteContent.contact.landmark);
-                setWorkingWeekdays(websiteContent.contact.workingHoursWeekdays);
-                setWorkingSunday(websiteContent.contact.workingHoursSunday);
-                setTelegramChannel(websiteContent.contact.telegramChannel);
-                setTelegramAdmin(websiteContent.contact.telegramAdmin);
-                setInstagram(websiteContent.contact.instagram);
-              }
-            }}
-            className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+            onClick={() => setIsResetConfirmOpen(true)}
+            className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
           >
             Boshlang‘ichga qaytarish
           </button>
@@ -493,12 +497,8 @@ export default function WebsiteAdminPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(`"${item.title}" qulayligini o‘chirishni xohlaysizmi?`)) {
-                              deleteWebsiteFeature(item.id);
-                            }
-                          }}
-                          className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors"
+                          onClick={() => setFeatureToDelete(item)}
+                          className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer"
                           title="O‘chirish"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -891,6 +891,47 @@ export default function WebsiteAdminPage() {
           </form>
         )}
       </Modal>
+
+      {/* Delete Facility Confirmation Modal */}
+      {featureToDelete && (
+        <ConfirmDeleteModal
+          isOpen={!!featureToDelete}
+          onClose={() => setFeatureToDelete(null)}
+          onConfirm={() => {
+            if (featureToDelete) {
+              deleteWebsiteFeature(featureToDelete.id);
+              setFeatureToDelete(null);
+            }
+          }}
+          title="Qulaylikni O‘chirish"
+          description="Haqiqatan ham ushbu qulaylik kartochkasini saytdan olib tashlamoqchimisiz?"
+          itemType="Zal Qulayligi"
+          itemName={featureToDelete.title}
+          itemDetails={
+            <div className="text-xs text-zinc-300">
+              <p className="text-zinc-400">{featureToDelete.desc}</p>
+            </div>
+          }
+          warningText="Ushbu blok o‘chirilgach, u asosiy sahifadagi 'Biz Haqimizda' qulayliklar bo‘limidan butunlay olib tashlanadi."
+          confirmText="Ha, o‘chirilsin"
+        />
+      )}
+
+      {/* Reset Website Content Confirmation Modal */}
+      {isResetConfirmOpen && (
+        <ConfirmDeleteModal
+          isOpen={isResetConfirmOpen}
+          onClose={() => setIsResetConfirmOpen(false)}
+          onConfirm={handleConfirmReset}
+          title="Standart Holatga Qaytarish"
+          description="Barcha sayt matnlari va sozlamalarini zavod holatiga qaytarmoqchimisiz?"
+          itemType="Sayt Ma’lumotlari"
+          itemName="Standart Matnlar, Statistikalar & Aloqa"
+          warningText="Sayt kontentiga kiritilgan barcha o‘zgarishlar asl namunalarga tiklanadi."
+          confirmText="Ha, standartga qaytarilsin"
+          variant="warning"
+        />
+      )}
     </div>
   );
 }
