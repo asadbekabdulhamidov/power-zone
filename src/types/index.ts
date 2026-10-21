@@ -21,6 +21,8 @@ export interface Member {
   fullName: string;
   phone: string;
   photoUrl: string;
+  telegramUsername?: string;
+  instagramUsername?: string;
   membershipPlanId: string;
   membershipPlanName: string;
   membershipPriceAgreed: number; // Preserves historical agreed price even when plan changes

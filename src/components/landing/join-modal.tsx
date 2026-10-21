@@ -20,6 +20,8 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('+998 ');
+  const [telegram, setTelegram] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [gender, setGender] = useState<'erkak' | 'ayol'>('erkak');
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,10 +49,22 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
         ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
         : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80';
 
+    const cleanTelegram = telegram.trim()
+      ? telegram.trim().startsWith('@')
+        ? telegram.trim()
+        : `@${telegram.trim()}`
+      : undefined;
+
+    const cleanInstagram = instagram.trim()
+      ? instagram.trim().replace(/^@/, '')
+      : undefined;
+
     addMember({
       fullName: fullName.trim(),
       phone: phone.trim(),
       photoUrl: photo,
+      telegramUsername: cleanTelegram,
+      instagramUsername: cleanInstagram,
       membershipPlanId: plan.id,
       membershipPlanName: plan.name,
       membershipPriceAgreed: plan.price,
@@ -138,6 +152,21 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
             onChange={(e) => setPhone(e.target.value)}
             required
           />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Telegram (ixtiyoriy)"
+              placeholder="@username"
+              value={telegram}
+              onChange={(e) => setTelegram(e.target.value)}
+            />
+            <Input
+              label="Instagram (ixtiyoriy)"
+              placeholder="@username"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+            />
+          </div>
 
           <div>
             <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">

@@ -39,12 +39,15 @@ All listed features below have been inspected in code and verified via a clean p
 
 ### D. Member Management (`/admin/members`)
 - [x] Members table with avatar photo, full name, phone number, current plan, status badges, and expiration dates.
-- [x] Real-time search by full name or phone number.
+- [x] **Telegram & Instagram Social Profiles**: Members can have their Telegram (`@username`) and Instagram usernames recorded with direct clickable chat/profile links in the table and profile details.
+- [x] **Live Web Camera Photo Capture**: Administrators can turn on the gym/club web camera directly inside the form (`getUserMedia`), view a live mirror stream, and capture a photo snapshot on the spot.
+- [x] **Device File Photo Upload**: Direct file upload from computer or phone file storage with instant preview.
+- [x] Real-time search by full name, phone number, Telegram, or Instagram handle.
 - [x] Filters for status (*All*, *Active*, *Expiring*, *Expired*) and plan type.
 - [x] **Weekly 3-Day Attendance Enforcer**: Tracks and displays visits this week (`X/3 kun`). Includes check-in button that blocks visits once 3/3 is reached.
-- [x] **Add Member Modal**: Full form with name, phone, gender, age, start date, and plan selection.
-- [x] **Edit Member Modal**: Updates name, phone, expiration, notes, and status.
-- [x] **Member Detail View**: Slide-out/modal view showing complete profile, visit metrics, and isolated payment history for that specific member.
+- [x] **Add Member Modal**: Full form with name, phone, photo (camera/upload), telegram, instagram, gender, age, start date, and plan selection.
+- [x] **Edit Member Modal**: Updates name, phone, photo, telegram, instagram, expiration, notes, and status.
+- [x] **Member Detail View**: Slide-out/modal view showing complete profile, visit metrics, social outreach links, and isolated payment history for that specific member.
 - [x] Delete member action with confirmation dialog.
 
 ### E. Membership Plans Management (`/admin/memberships`)

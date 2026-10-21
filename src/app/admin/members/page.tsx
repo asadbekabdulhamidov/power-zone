@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Search,
   Plus,
@@ -12,6 +12,11 @@ import {
   Edit2,
   Trash2,
   Dumbbell,
+  Camera,
+  CameraOff,
+  Upload,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +28,24 @@ import { useFitnesFlow } from '@/context/fitnes-context';
 import { Member, MemberStatus } from '@/types';
 import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
+
+function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
 
 export default function MembersPage() {
   const { members, plans, payments, addMember, updateMember, deleteMember, recordMemberVisit } =
@@ -42,6 +65,9 @@ export default function MembersPage() {
   // Form states for Add Member
   const [formName, setFormName] = useState('');
   const [formPhone, setFormPhone] = useState('+998');
+  const [formTelegram, setFormTelegram] = useState('');
+  const [formInstagram, setFormInstagram] = useState('');
+  const [formPhoto, setFormPhoto] = useState<string | null>(null);
   const [formPlanId, setFormPlanId] = useState(plans[0]?.id || '');
   const [formStartDate, setFormStartDate] = useState(
     new Date().toISOString().split('T')[0]
@@ -51,12 +77,163 @@ export default function MembersPage() {
   const [formNotes, setFormNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Camera & upload states for Add Member
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Edit form states
+  const [editTelegram, setEditTelegram] = useState('');
+  const [editInstagram, setEditInstagram] = useState('');
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [isEditCameraActive, setIsEditCameraActive] = useState(false);
+  const [editCameraError, setEditCameraError] = useState<string | null>(null);
+  const editVideoRef = useRef<HTMLVideoElement | null>(null);
+  const editStreamRef = useRef<MediaStream | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Camera helpers
+  const startCamera = async (isEdit = false) => {
+    if (isEdit) setEditCameraError(null);
+    else setCameraError(null);
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Kamera texnologiyasi ushbu brauzerda mavjud emas');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+
+      if (isEdit) {
+        editStreamRef.current = stream;
+        setIsEditCameraActive(true);
+        setTimeout(() => {
+          if (editVideoRef.current) {
+            editVideoRef.current.srcObject = stream;
+            editVideoRef.current.play();
+          }
+        }, 100);
+      } else {
+        streamRef.current = stream;
+        setIsCameraActive(true);
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play();
+          }
+        }, 100);
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const msg =
+        'Kameraga ulanib bo‘lmadi yoki ruxsat berilmadi. Iltimos, brauzer sozlamalarida kameraga ruxsat bering yoki qurilmadan rasm yuklang.';
+      if (isEdit) setEditCameraError(msg);
+      else setCameraError(msg);
+    }
+  };
+
+  const stopCamera = (isEdit = false) => {
+    if (isEdit) {
+      if (editStreamRef.current) {
+        editStreamRef.current.getTracks().forEach((track) => track.stop());
+        editStreamRef.current = null;
+      }
+      setIsEditCameraActive(false);
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      setIsCameraActive(false);
+    }
+  };
+
+  const capturePhoto = (isEdit = false) => {
+    const video = isEdit ? editVideoRef.current : videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      if (isEdit) {
+        setEditPhoto(dataUrl);
+      } else {
+        setFormPhoto(dataUrl);
+      }
+    }
+    stopCamera(isEdit);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        const errorMsg = 'Faqat rasm formatidagi fayllarni yuklash mumkin';
+        if (isEdit) setEditCameraError(errorMsg);
+        else setCameraError(errorMsg);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          if (isEdit) setEditPhoto(reader.result);
+          else setFormPhoto(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOpenAddModal = () => {
+    setFormName('');
+    setFormPhone('+998');
+    setFormTelegram('');
+    setFormInstagram('');
+    setFormPhoto(null);
+    setCameraError(null);
+    setFormNotes('');
+    setIsCameraActive(false);
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    stopCamera(false);
+    setIsAddModalOpen(false);
+    setFormPhoto(null);
+    setCameraError(null);
+  };
+
+  const handleOpenEditModal = (member: Member) => {
+    setEditingMember(member);
+    setEditTelegram(member.telegramUsername || '');
+    setEditInstagram(member.instagramUsername || '');
+    setEditPhoto(member.photoUrl || null);
+    setEditCameraError(null);
+    setIsEditCameraActive(false);
+  };
+
+  const handleCloseEditModal = () => {
+    stopCamera(true);
+    setEditingMember(null);
+    setEditCameraError(null);
+  };
+
   // Filtered members
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
       const matchSearch =
         m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.phone.includes(searchQuery);
+        m.phone.includes(searchQuery) ||
+        (m.telegramUsername && m.telegramUsername.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (m.instagramUsername && m.instagramUsername.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchStatus =
         statusFilter === 'all' || m.status === statusFilter;
@@ -90,16 +267,30 @@ export default function MembersPage() {
     expiryDateObj.setDate(startDateObj.getDate() + duration);
     const expiryDateStr = expiryDateObj.toISOString().split('T')[0];
 
-    // Placeholder avatar based on gender
+    // Final photo: captured/uploaded or gender default
     const defaultPhoto =
       formGender === 'ayol'
         ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
         : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
 
+    const finalPhoto = formPhoto || defaultPhoto;
+
+    const cleanTelegram = formTelegram.trim()
+      ? formTelegram.trim().startsWith('@')
+        ? formTelegram.trim()
+        : `@${formTelegram.trim()}`
+      : undefined;
+
+    const cleanInstagram = formInstagram.trim()
+      ? formInstagram.trim().replace(/^@/, '')
+      : undefined;
+
     addMember({
       fullName: formName.trim(),
       phone: formPhone.trim(),
-      photoUrl: defaultPhoto,
+      photoUrl: finalPhoto,
+      telegramUsername: cleanTelegram,
+      instagramUsername: cleanInstagram,
       membershipPlanId: selectedPlan.id,
       membershipPlanName: selectedPlan.name,
       membershipPriceAgreed: selectedPlan.price,
@@ -112,11 +303,7 @@ export default function MembersPage() {
       notes: formNotes.trim() || undefined,
     });
 
-    // Reset and close
-    setFormName('');
-    setFormPhone('+998');
-    setFormNotes('');
-    setIsAddModalOpen(false);
+    handleCloseAddModal();
   };
 
   // Handle Edit Member Submission
@@ -124,16 +311,29 @@ export default function MembersPage() {
     e.preventDefault();
     if (!editingMember) return;
 
+    const cleanTelegram = editTelegram.trim()
+      ? editTelegram.trim().startsWith('@')
+        ? editTelegram.trim()
+        : `@${editTelegram.trim()}`
+      : undefined;
+
+    const cleanInstagram = editInstagram.trim()
+      ? editInstagram.trim().replace(/^@/, '')
+      : undefined;
+
     updateMember(editingMember.id, {
       fullName: editingMember.fullName,
       phone: editingMember.phone,
+      photoUrl: editPhoto || editingMember.photoUrl,
+      telegramUsername: cleanTelegram,
+      instagramUsername: cleanInstagram,
       status: editingMember.status,
       notes: editingMember.notes,
       expiryDate: editingMember.expiryDate,
       startDate: editingMember.startDate,
     });
 
-    setEditingMember(null);
+    handleCloseEditModal();
   };
 
   return (
@@ -154,7 +354,7 @@ export default function MembersPage() {
 
         <Button
           variant="primary"
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="shadow-lg shadow-lime-500/20"
         >
           <Plus className="w-4 h-4" />
@@ -248,9 +448,37 @@ export default function MembersPage() {
                         <div className="font-bold text-white text-sm hover:text-lime-400 transition-colors">
                           {member.fullName}
                         </div>
-                        <div className="text-xs text-zinc-400 flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-zinc-500" />
-                          <span>{formatPhoneNumber(member.phone)}</span>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <div className="text-xs text-zinc-400 flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-zinc-500" />
+                            <span>{formatPhoneNumber(member.phone)}</span>
+                          </div>
+                          {member.telegramUsername && (
+                            <a
+                              href={`https://t.me/${member.telegramUsername.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold flex items-center gap-0.5 bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-800/50"
+                              title={`Telegram: ${member.telegramUsername}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Send className="w-2.5 h-2.5" />
+                              <span>{member.telegramUsername}</span>
+                            </a>
+                          )}
+                          {member.instagramUsername && (
+                            <a
+                              href={`https://instagram.com/${member.instagramUsername.replace(/^@/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-pink-400 hover:text-pink-300 font-semibold flex items-center gap-0.5 bg-pink-950/60 px-1.5 py-0.5 rounded border border-pink-800/50"
+                              title={`Instagram: @${member.instagramUsername.replace(/^@/, '')}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <InstagramIcon className="w-2.5 h-2.5" />
+                              <span>@{member.instagramUsername.replace(/^@/, '')}</span>
+                            </a>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -349,7 +577,7 @@ export default function MembersPage() {
 
                       {/* Edit */}
                       <button
-                        onClick={() => setEditingMember(member)}
+                        onClick={() => handleOpenEditModal(member)}
                         title="Tahrirlash"
                         className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors"
                       >
@@ -394,9 +622,9 @@ export default function MembersPage() {
       {/* ADD MEMBER MODAL */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={handleCloseAddModal}
         title="Yangi A’zo Qo‘shish"
-        description="Fitnes klubga yangi mijozni ro‘yxatdan o‘tkazing va abonement biriktiring."
+        description="Fitnes klubga yangi mijozni ro‘yxatdan o‘tkazing, suratini oling va abonement biriktiring."
         maxWidth="lg"
       >
         <form onSubmit={handleAddSubmit} className="space-y-4">
@@ -405,6 +633,139 @@ export default function MembersPage() {
               {formError}
             </div>
           )}
+
+          {/* Member Photo Capture & Upload Area */}
+          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-lime-400" />
+                <span>Mijoz Fotosurati</span>
+              </label>
+              <span className="text-[10px] text-zinc-400">
+                Jonli kamera yoki qurilma xotirasidan
+              </span>
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={(e) => handleFileChange(e, false)}
+              accept="image/*"
+              className="hidden"
+            />
+
+            {cameraError && (
+              <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs">
+                {cameraError}
+              </div>
+            )}
+
+            {isCameraActive ? (
+              <div className="space-y-3">
+                <div className="relative rounded-2xl overflow-hidden bg-black border-2 border-lime-500/50 aspect-video max-h-56 flex items-center justify-center">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    <span>Jonli Kamera</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => stopCamera(false)}
+                    className="text-xs border-zinc-700 text-zinc-300"
+                  >
+                    <CameraOff className="w-3.5 h-3.5 mr-1" />
+                    <span>Kamerani Yopish</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="lime"
+                    size="sm"
+                    onClick={() => capturePhoto(false)}
+                    className="text-xs shadow-md shadow-lime-500/20"
+                  >
+                    <Camera className="w-3.5 h-3.5 mr-1" />
+                    <span>Hozir Rasmga Olish</span>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                {/* Current Photo Preview */}
+                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-zinc-700 bg-zinc-950 shrink-0 shadow-inner">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      formPhoto ||
+                      (formGender === 'ayol'
+                        ? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80'
+                        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80')
+                    }
+                    alt="Mijoz fotosurati"
+                    className="w-full h-full object-cover"
+                  />
+                  {formPhoto && (
+                    <div className="absolute bottom-0 inset-x-0 bg-lime-500/95 text-zinc-950 text-[9px] font-extrabold text-center py-0.5">
+                      Yuklandi
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Take Photo with Camera */}
+                    <Button
+                      type="button"
+                      variant="lime"
+                      size="sm"
+                      onClick={() => startCamera(false)}
+                      className="text-xs h-8 px-3"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1.5" />
+                      <span>Kamerani Yoqish</span>
+                    </Button>
+
+                    {/* Upload File */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs h-8 px-3 border-zinc-700 hover:bg-zinc-800"
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
+                      <span>Fayl Yuklash</span>
+                    </Button>
+
+                    {formPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => setFormPhoto(null)}
+                        className="text-[11px] text-zinc-400 hover:text-rose-400 underline transition-colors"
+                      >
+                        Tozalash
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Klub veb-kamerasi orqali bevosita zalda rasmga oling yoki fayl tanlang.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
 
           <Input
             label="To‘liq Ism-Familiya"
@@ -443,6 +804,25 @@ export default function MembersPage() {
             />
           </div>
 
+          {/* Telegram and Instagram Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Telegram Profili (ixtiyoriy)"
+              placeholder="@username yoki raqam"
+              value={formTelegram}
+              onChange={(e) => setFormTelegram(e.target.value)}
+              leftIcon={<Send className="w-3.5 h-3.5 text-sky-400" />}
+            />
+
+            <Input
+              label="Instagram Profili (ixtiyoriy)"
+              placeholder="username (masalan: ali_fitness)"
+              value={formInstagram}
+              onChange={(e) => setFormInstagram(e.target.value)}
+              leftIcon={<InstagramIcon className="w-3.5 h-3.5 text-pink-400" />}
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Tarif Rejasi"
@@ -474,7 +854,7 @@ export default function MembersPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsAddModalOpen(false)}
+              onClick={handleCloseAddModal}
             >
               Bekor qilish
             </Button>
@@ -490,11 +870,112 @@ export default function MembersPage() {
       {editingMember && (
         <Modal
           isOpen={!!editingMember}
-          onClose={() => setEditingMember(null)}
+          onClose={handleCloseEditModal}
           title="A’zo Ma’lumotlarini Tahrirlash"
           maxWidth="lg"
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
+            {/* Edit Photo Area */}
+            <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-lime-400" />
+                  <span>A’zo Fotosuratini Yangilash</span>
+                </label>
+              </div>
+
+              <input
+                type="file"
+                ref={editFileInputRef}
+                onChange={(e) => handleFileChange(e, true)}
+                accept="image/*"
+                className="hidden"
+              />
+
+              {editCameraError && (
+                <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs">
+                  {editCameraError}
+                </div>
+              )}
+
+              {isEditCameraActive ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-2xl overflow-hidden bg-black border-2 border-lime-500/50 aspect-video max-h-56 flex items-center justify-center">
+                    <video
+                      ref={editVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover transform -scale-x-100"
+                    />
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      <span>Jonli Kamera</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => stopCamera(true)}
+                      className="text-xs border-zinc-700 text-zinc-300"
+                    >
+                      <CameraOff className="w-3.5 h-3.5 mr-1" />
+                      <span>Kamerani Yopish</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="lime"
+                      size="sm"
+                      onClick={() => capturePhoto(true)}
+                      className="text-xs shadow-md shadow-lime-500/20"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1" />
+                      <span>Hozir Rasmga Olish</span>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-zinc-700 bg-zinc-950 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editPhoto || editingMember.photoUrl}
+                      alt={editingMember.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="lime"
+                      size="sm"
+                      onClick={() => startCamera(true)}
+                      className="text-xs h-8 px-3"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1.5" />
+                      <span>Kamerani Yoqish</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => editFileInputRef.current?.click()}
+                      className="text-xs h-8 px-3 border-zinc-700 hover:bg-zinc-800"
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
+                      <span>Yangi Fayl Yuklash</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Input
               label="Ism-Familiya"
               value={editingMember.fullName}
@@ -512,6 +993,25 @@ export default function MembersPage() {
               }
               required
             />
+
+            {/* Telegram & Instagram in Edit */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Telegram Profili"
+                placeholder="@username"
+                value={editTelegram}
+                onChange={(e) => setEditTelegram(e.target.value)}
+                leftIcon={<Send className="w-3.5 h-3.5 text-sky-400" />}
+              />
+
+              <Input
+                label="Instagram Profili"
+                placeholder="username"
+                value={editInstagram}
+                onChange={(e) => setEditInstagram(e.target.value)}
+                leftIcon={<InstagramIcon className="w-3.5 h-3.5 text-pink-400" />}
+              />
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
@@ -553,7 +1053,7 @@ export default function MembersPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setEditingMember(null)}
+                onClick={handleCloseEditModal}
               >
                 Bekor qilish
               </Button>
@@ -597,7 +1097,41 @@ export default function MembersPage() {
                   <Phone className="w-3.5 h-3.5 text-lime-400" />
                   <span>{formatPhoneNumber(viewingMember.phone)}</span>
                 </p>
-                <div className="text-xs text-zinc-500 mt-1">
+
+                {/* Telegram & Instagram buttons */}
+                {(viewingMember.telegramUsername || viewingMember.instagramUsername) && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    {viewingMember.telegramUsername && (
+                      <a
+                        href={`https://t.me/${viewingMember.telegramUsername.replace(/^@/, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-sky-950/70 border border-sky-500/40 text-xs font-bold text-sky-400 hover:bg-sky-900/80 transition-colors"
+                        title="Telegramda xabar yozish"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Telegram: {viewingMember.telegramUsername}</span>
+                        <ExternalLink className="w-3 h-3 text-sky-400/70" />
+                      </a>
+                    )}
+
+                    {viewingMember.instagramUsername && (
+                      <a
+                        href={`https://instagram.com/${viewingMember.instagramUsername.replace(/^@/, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-950/70 border border-pink-500/40 text-xs font-bold text-pink-400 hover:bg-pink-900/80 transition-colors"
+                        title="Instagram profilini ko‘rish"
+                      >
+                        <InstagramIcon className="w-3.5 h-3.5" />
+                        <span>Instagram: @{viewingMember.instagramUsername.replace(/^@/, '')}</span>
+                        <ExternalLink className="w-3 h-3 text-pink-400/70" />
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                <div className="text-xs text-zinc-500 mt-2">
                   A’zo bo‘lgan sana: {formatDateUz(viewingMember.createdAt)}
                 </div>
               </div>
