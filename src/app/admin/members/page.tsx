@@ -28,7 +28,7 @@ import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { Member, MemberStatus, PaymentMethod } from '@/types';
-import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference } from '@/lib/utils';
+import { formatUZS, formatDateUz, formatPhoneNumber, getDaysDifference, parseNumericInput } from '@/lib/utils';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
 
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -80,13 +80,13 @@ export default function MembersPage() {
   const [formPhoto, setFormPhoto] = useState<string | null>(null);
   const [formPlanId, setFormPlanId] = useState(plans[0]?.id || '');
   const [formMonthsCount, setFormMonthsCount] = useState<number>(1);
-  const [formPaidAmount, setFormPaidAmount] = useState<number | null>(null);
+  const [formPaidAmount, setFormPaidAmount] = useState<number | '' | null>(null);
   const [formPaymentMethod, setFormPaymentMethod] = useState<PaymentMethod>('cash');
   const [formStartDate, setFormStartDate] = useState(
     new Date().toISOString().split('T')[0]
   );
   const [formGender, setFormGender] = useState<'erkak' | 'ayol'>('erkak');
-  const [formAge, setFormAge] = useState<number>(25);
+  const [formAge, setFormAge] = useState<number | ''>(25);
   const [formNotes, setFormNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -101,7 +101,7 @@ export default function MembersPage() {
   const [editTelegram, setEditTelegram] = useState('');
   const [editInstagram, setEditInstagram] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
-  const [editDebtAmount, setEditDebtAmount] = useState<number>(0);
+  const [editDebtAmount, setEditDebtAmount] = useState<number | ''>(0);
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -301,7 +301,12 @@ export default function MembersPage() {
     const expiryDateStr = expiryDateObj.toISOString().split('T')[0];
 
     const planTotal = selectedPlan.price * months;
-    const actualPaid = formPaidAmount !== null ? Number(formPaidAmount) : planTotal;
+    const actualPaid =
+      formPaidAmount !== null
+        ? formPaidAmount === ''
+          ? 0
+          : Number(formPaidAmount)
+        : planTotal;
     const initialDebt = Math.max(0, planTotal - actualPaid);
 
     // Final photo: captured/uploaded or gender default
@@ -338,7 +343,7 @@ export default function MembersPage() {
       expiryDate: expiryDateStr,
       status: 'active',
       gender: formGender,
-      age: formAge,
+      age: formAge === '' ? 25 : Number(formAge),
       notes: formNotes.trim() || undefined,
     });
 
@@ -392,7 +397,7 @@ export default function MembersPage() {
       notes: editingMember.notes,
       expiryDate: editingMember.expiryDate,
       startDate: editingMember.startDate,
-      debtAmount: Number(editDebtAmount) || 0,
+      debtAmount: editDebtAmount === '' ? 0 : Number(editDebtAmount),
     });
 
     handleCloseEditModal();
@@ -920,7 +925,7 @@ export default function MembersPage() {
               min={10}
               max={99}
               value={formAge}
-              onChange={(e) => setFormAge(Number(e.target.value))}
+              onChange={(e) => setFormAge(parseNumericInput(e.target.value))}
             />
           </div>
 
@@ -978,7 +983,8 @@ export default function MembersPage() {
             const months = isSingle ? 1 : formMonthsCount;
             const totalRequired = (currentPlan?.price || 200000) * months;
             const actualPaid = formPaidAmount !== null ? formPaidAmount : totalRequired;
-            const debt = Math.max(0, totalRequired - actualPaid);
+            const numPaid = actualPaid === '' ? 0 : Number(actualPaid);
+            const debt = Math.max(0, totalRequired - numPaid);
 
             return (
               <div className="space-y-3 pt-2 pb-1 border-t border-zinc-800">
@@ -1031,7 +1037,7 @@ export default function MembersPage() {
                       min={0}
                       step={5000}
                       value={actualPaid}
-                      onChange={(e) => setFormPaidAmount(Number(e.target.value))}
+                      onChange={(e) => setFormPaidAmount(parseNumericInput(e.target.value))}
                       helperText={
                         debt > 0
                           ? `⚠️ Qarz: ${formatUZS(debt)}`
@@ -1285,9 +1291,9 @@ export default function MembersPage() {
               min={0}
               step={5000}
               value={editDebtAmount}
-              onChange={(e) => setEditDebtAmount(Number(e.target.value))}
+              onChange={(e) => setEditDebtAmount(parseNumericInput(e.target.value))}
               helperText={
-                editDebtAmount > 0
+                (Number(editDebtAmount) || 0) > 0
                   ? `Mijozda ${formatUZS(editDebtAmount)} to‘lanmagan qarz hisoblanadi.`
                   : 'Qarz yo‘q (0 UZS).'
               }

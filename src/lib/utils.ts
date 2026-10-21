@@ -9,10 +9,30 @@ export function cn(...inputs: ClassValue[]) {
  * Format currency amount into Uzbek Sum (UZS)
  * e.g. 200000 -> "200,000 UZS" or "200 000 so'm"
  */
-export function formatUZS(amount: number, suffix: 'UZS' | "so'm" = 'UZS'): string {
-  if (isNaN(amount) || amount === null || amount === undefined) return `0 ${suffix}`;
-  const formatted = new Intl.NumberFormat('uz-UZ').format(Math.round(amount));
+export function formatUZS(amount: number | string | '' | null | undefined, suffix: 'UZS' | "so'm" = 'UZS'): string {
+  if (amount === '' || amount === null || amount === undefined) return `0 ${suffix}`;
+  const num = typeof amount === 'string' ? Number(amount) : amount;
+  if (isNaN(num)) return `0 ${suffix}`;
+  const formatted = new Intl.NumberFormat('uz-UZ').format(Math.round(num));
   return `${formatted} ${suffix}`;
+}
+
+/**
+ * Safely parse numeric input from form events, allowing empty string when cleared with backspace
+ * and stripping unwanted leading zeroes (e.g. "01222" -> 1222, "0" -> 0, "" -> "").
+ */
+export function parseNumericInput(val: string | number | null | undefined): number | '' {
+  if (val === '' || val === null || val === undefined) {
+    return '';
+  }
+  const str = String(val).trim();
+  if (str === '') {
+    return '';
+  }
+  // Strip leading zeroes followed by another digit, e.g. "01222" -> "1222"
+  const clean = str.replace(/^0+(?=\d)/, '');
+  const num = Number(clean);
+  return isNaN(num) ? '' : num;
 }
 
 /**

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { PaymentMethod } from '@/types';
-import { formatUZS, formatDateUz } from '@/lib/utils';
+import { formatUZS, formatDateUz, parseNumericInput } from '@/lib/utils';
 import {
   CheckCircle2,
   Calendar,
@@ -31,7 +31,7 @@ export function QuickPaymentModal({
   const [selectedMemberId, setSelectedMemberId] = useState(preselectedMemberId || '');
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [monthsCount, setMonthsCount] = useState<number>(1);
-  const [amount, setAmount] = useState<number>(300000);
+  const [amount, setAmount] = useState<number | ''>(300000);
   const [includeOldDebt, setIncludeOldDebt] = useState<boolean>(true);
   const [paymentDate, setPaymentDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -174,7 +174,8 @@ export function QuickPaymentModal({
       setError('Iltimos, tarif rejasini tanlang');
       return;
     }
-    if (!amount || amount <= 0) {
+    const numAmount = amount === '' ? 0 : Number(amount);
+    if (numAmount <= 0) {
       setError('To‘lov summasi 0 dan katta bo‘lishi lozim');
       return;
     }
@@ -193,7 +194,7 @@ export function QuickPaymentModal({
         memberPhone: currentMember.phone,
         membershipPlanId: currentPlan.id,
         membershipPlanName: currentPlan.name,
-        amount: Number(amount),
+        amount: numAmount,
         monthsCount: isSingleVisit ? 1 : monthsCount,
         expectedAmount: targetTotal,
         remainingDebt: remainingDebt,
@@ -365,8 +366,8 @@ export function QuickPaymentModal({
               label="Haqiqatda To‘lanayotgan Summa (UZS)"
               type="number"
               value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              min={1000}
+              onChange={(e) => setAmount(parseNumericInput(e.target.value))}
+              min={0}
               step={5000}
               required
               helperText={`So'mda: ${formatUZS(amount)}`}

@@ -19,19 +19,21 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { MembershipPlan, AccessType } from '@/types';
-import { formatUZS } from '@/lib/utils';
+import { formatUZS, parseNumericInput } from '@/lib/utils';
 
 export default function MembershipsPage() {
   const { plans, members, addPlan, updatePlan, deletePlan, togglePlanStatus } = useFitnesFlow();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
+  const [editPrice, setEditPrice] = useState<number | ''>(0);
+  const [editDurationDays, setEditDurationDays] = useState<number | ''>(30);
 
   // Add plan form state
   const [name, setName] = useState('');
-  const [price, setPrice] = useState<number>(250000);
+  const [price, setPrice] = useState<number | ''>(250000);
   const [description, setDescription] = useState('');
-  const [durationDays, setDurationDays] = useState<number>(30);
+  const [durationDays, setDurationDays] = useState<number | ''>(30);
   const [accessType, setAccessType] = useState<AccessType>('monthly_unlimited');
   const [addFeatures, setAddFeatures] = useState<string[]>([
     'Barcha kardio va kuch trenajyorlari',
@@ -83,15 +85,27 @@ export default function MembershipsPage() {
     });
   };
 
+  const handleOpenEdit = (plan: MembershipPlan) => {
+    setEditingPlan({
+      ...plan,
+      features: plan.features ? [...plan.features] : [],
+    });
+    setEditPrice(plan.price);
+    setEditDurationDays(plan.durationDays);
+  };
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+
+    const numPrice = price === '' ? 0 : Number(price);
+    const numDuration = durationDays === '' ? 30 : Number(durationDays);
 
     if (!name.trim()) {
       setFormError('Tarif nomi kiritilishi shart');
       return;
     }
-    if (!price || price <= 0) {
+    if (numPrice <= 0) {
       setFormError('Narx 0 dan katta bo‘lishi shart');
       return;
     }
@@ -107,9 +121,9 @@ export default function MembershipsPage() {
 
     addPlan({
       name: name.trim(),
-      price: Number(price),
+      price: numPrice,
       description: description.trim(),
-      durationDays: Number(durationDays),
+      durationDays: numDuration,
       accessType,
       status: 'active',
       features: cleanedFeatures,
@@ -137,11 +151,14 @@ export default function MembershipsPage() {
       .map((f) => f.trim())
       .filter((f) => f.length > 0);
 
+    const numPrice = editPrice === '' ? 0 : Number(editPrice);
+    const numDuration = editDurationDays === '' ? 30 : Number(editDurationDays);
+
     updatePlan(editingPlan.id, {
       name: editingPlan.name.trim(),
-      price: Number(editingPlan.price),
+      price: numPrice,
       description: editingPlan.description.trim(),
-      durationDays: Number(editingPlan.durationDays),
+      durationDays: numDuration,
       accessType: editingPlan.accessType,
       status: editingPlan.status,
       features: cleanedFeatures.length > 0 ? cleanedFeatures : ['Barcha trenajyorlar'],
@@ -284,12 +301,7 @@ export default function MembershipsPage() {
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() =>
-                      setEditingPlan({
-                        ...plan,
-                        features: plan.features ? [...plan.features] : [],
-                      })
-                    }
+                    onClick={() => handleOpenEdit(plan)}
                     title="Tahrirlash"
                     className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
                   >
@@ -348,8 +360,8 @@ export default function MembershipsPage() {
               label="Narxi (UZS)"
               type="number"
               value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              min={1000}
+              onChange={(e) => setPrice(parseNumericInput(e.target.value))}
+              min={0}
               step={5000}
               required
               helperText={`Formatlangan: ${formatUZS(price)}`}
@@ -359,7 +371,7 @@ export default function MembershipsPage() {
               label="Davomiyligi (kun)"
               type="number"
               value={durationDays}
-              onChange={(e) => setDurationDays(Number(e.target.value))}
+              onChange={(e) => setDurationDays(parseNumericInput(e.target.value))}
               min={1}
               required
             />
@@ -488,25 +500,18 @@ export default function MembershipsPage() {
               <Input
                 label="Narxi (UZS)"
                 type="number"
-                value={editingPlan.price}
-                onChange={(e) =>
-                  setEditingPlan({ ...editingPlan, price: Number(e.target.value) })
-                }
-                min={1000}
+                value={editPrice}
+                onChange={(e) => setEditPrice(parseNumericInput(e.target.value))}
+                min={0}
                 required
-                helperText={`So'mda: ${formatUZS(editingPlan.price)}`}
+                helperText={`So'mda: ${formatUZS(editPrice)}`}
               />
 
               <Input
                 label="Davomiyligi (kun)"
                 type="number"
-                value={editingPlan.durationDays}
-                onChange={(e) =>
-                  setEditingPlan({
-                    ...editingPlan,
-                    durationDays: Number(e.target.value),
-                  })
-                }
+                value={editDurationDays}
+                onChange={(e) => setEditDurationDays(parseNumericInput(e.target.value))}
                 min={1}
                 required
               />

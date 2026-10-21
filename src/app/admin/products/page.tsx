@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { Product, ProductCategory } from '@/types';
-import { formatUZS } from '@/lib/utils';
+import { formatUZS, parseNumericInput } from '@/lib/utils';
 
 // Verified, high-definition preset photos for gym products
 const PRESET_PRODUCT_IMAGES: {
@@ -144,14 +144,16 @@ export default function ProductsPage() {
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editPrice, setEditPrice] = useState<number | ''>(0);
+  const [editStock, setEditStock] = useState<number | ''>(0);
 
   // Add Product form state
   const [formName, setFormName] = useState('');
   const [formCategory, setFormCategory] = useState<ProductCategory>('water');
   const [formImageUrl, setFormImageUrl] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formPrice, setFormPrice] = useState<number>(10000);
-  const [formStock, setFormStock] = useState<number>(20);
+  const [formPrice, setFormPrice] = useState<number | ''>(10000);
+  const [formStock, setFormStock] = useState<number | ''>(20);
   const [formUnit, setFormUnit] = useState('dona');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -331,16 +333,26 @@ export default function ProductsPage() {
     return products.filter((p) => p.stockQuantity <= 10).length;
   }, [products]);
 
+  // Open edit modal and initialize price/stock states
+  const handleOpenEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditPrice(product.price);
+    setEditStock(product.stockQuantity);
+  };
+
   // Handle Add Product Submission
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
+    const numPrice = formPrice === '' ? 0 : Number(formPrice);
+    const numStock = formStock === '' ? 0 : Number(formStock);
+
     if (!formName.trim()) {
       setFormError('Mahsulot nomi kiritilishi shart');
       return;
     }
-    if (!formPrice || formPrice <= 0) {
+    if (numPrice <= 0) {
       setFormError('Narx 0 dan katta bo‘lishi shart');
       return;
     }
@@ -356,8 +368,8 @@ export default function ProductsPage() {
       categoryLabel: categoryLabels[formCategory],
       imageUrl: defaultImg,
       description: formDescription.trim(),
-      price: Number(formPrice),
-      stockQuantity: Number(formStock),
+      price: numPrice,
+      stockQuantity: numStock,
       isActive: true,
       unit: formUnit,
     });
@@ -382,14 +394,17 @@ export default function ProductsPage() {
       CATEGORY_DEFAULT_IMAGES[editingProduct.category] ||
       CATEGORY_DEFAULT_IMAGES.water;
 
+    const finalPrice = editPrice === '' ? 0 : Number(editPrice);
+    const finalStock = editStock === '' ? 0 : Number(editStock);
+
     updateProduct(editingProduct.id, {
       name: editingProduct.name,
       category: editingProduct.category,
       categoryLabel: categoryLabels[editingProduct.category],
       imageUrl: finalImg,
       description: editingProduct.description,
-      price: Number(editingProduct.price),
-      stockQuantity: Number(editingProduct.stockQuantity),
+      price: finalPrice,
+      stockQuantity: finalStock,
       isActive: editingProduct.isActive,
       unit: editingProduct.unit,
     });
@@ -621,7 +636,7 @@ export default function ProductsPage() {
                   <div className="inline-flex items-center gap-1.5">
                     {/* Edit */}
                     <button
-                      onClick={() => setEditingProduct(product)}
+                      onClick={() => handleOpenEdit(product)}
                       title="Tahrirlash"
                       className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     >
@@ -713,8 +728,8 @@ export default function ProductsPage() {
               label="Narxi (UZS)"
               type="number"
               value={formPrice}
-              onChange={(e) => setFormPrice(Number(e.target.value))}
-              min={1000}
+              onChange={(e) => setFormPrice(parseNumericInput(e.target.value))}
+              min={0}
               step={1000}
               required
               helperText={`Formatlangan: ${formatUZS(formPrice)}`}
@@ -726,7 +741,7 @@ export default function ProductsPage() {
               label="Ombordagi Miqdor"
               type="number"
               value={formStock}
-              onChange={(e) => setFormStock(Number(e.target.value))}
+              onChange={(e) => setFormStock(parseNumericInput(e.target.value))}
               min={0}
               required
             />
@@ -986,16 +1001,11 @@ export default function ProductsPage() {
               <Input
                 label="Narxi (UZS)"
                 type="number"
-                value={editingProduct.price}
-                onChange={(e) =>
-                  setEditingProduct({
-                    ...editingProduct,
-                    price: Number(e.target.value),
-                  })
-                }
-                min={1000}
+                value={editPrice}
+                onChange={(e) => setEditPrice(parseNumericInput(e.target.value))}
+                min={0}
                 required
-                helperText={`So'mda: ${formatUZS(editingProduct.price)}`}
+                helperText={`So'mda: ${formatUZS(editPrice)}`}
               />
             </div>
 
@@ -1003,13 +1013,8 @@ export default function ProductsPage() {
               <Input
                 label="Ombordagi Miqdor"
                 type="number"
-                value={editingProduct.stockQuantity}
-                onChange={(e) =>
-                  setEditingProduct({
-                    ...editingProduct,
-                    stockQuantity: Number(e.target.value),
-                  })
-                }
+                value={editStock}
+                onChange={(e) => setEditStock(parseNumericInput(e.target.value))}
                 min={0}
                 required
               />

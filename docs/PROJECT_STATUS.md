@@ -86,6 +86,7 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **One-Click Preset Photos**: Instant category-based gym product photo suggestions (Water, Whey Protein, Isotonic, BCAA, Towel, Shaker, etc.).
 - [x] **Resilient Image Fallback & Auto-Healing**: Added multi-level error handling (`ProductCardImage` & `AdminProductThumbnail`) so broken URLs never display blank or broken icon boxes. Auto-heals cached legacy URLs in `localStorage`.
 - [x] **One-Click Refresh Tool ("Rasmlarni Yangilash")**: Added toolbar button to reset and update all product images to official verified photos.
+- [x] **Clean Numeric Input & Zero-Stripping Engine**: Created `parseNumericInput` utility across all number inputs (Products price/stock, Quick Payment amounts, Members debt/paid/age, Membership plans price/duration). When administrators backspace to clear an input, it completely empties without sticking to `0`, and subsequent typing starts clean without leading zeroes (e.g., `1222` instead of `01222`).
 
 ### I. Admin Settings & Password Management (`/admin/settings`)
 - [x] **Admin Password Change Form**: Secure form with current password validation, minimum 6 characters requirement, new password match verification, and show/hide password toggles.
