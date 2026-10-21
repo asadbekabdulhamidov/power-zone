@@ -3,8 +3,12 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useFitnesFlow } from '@/context/fitnes-context';
 
 export function LandingHero() {
+  const { websiteContent } = useFitnesFlow();
+  const { hero, stats } = websiteContent;
+
   return (
     <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden bg-[#090d16]">
       {/* Background Photography with Gradient Overlay */}
@@ -22,19 +26,29 @@ export function LandingHero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-lime-500/15 border border-lime-500/30 text-lime-400 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-md">
-            <Flame className="w-3.5 h-3.5 text-lime-400" />
-            <span>Farg‘ona, Quva • Akbaroboddagi Eng Zamonaviy Fitnes Klubi</span>
-          </div>
+          {hero.badge && (
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-lime-500/15 border border-lime-500/30 text-lime-400 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-md">
+              <Flame className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+              <span>{hero.badge}</span>
+            </div>
+          )}
 
           {/* Main Uzbek Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white uppercase leading-[1.08]">
-            O‘zingizning Eng <span className="text-lime-400">Kuchli</span> Versiyangizni Yarating
+            {hero.title.includes('Kuchli') ? (
+              <>
+                {hero.title.split('Kuchli')[0]}
+                <span className="text-lime-400">Kuchli</span>
+                {hero.title.split('Kuchli')[1]}
+              </>
+            ) : (
+              hero.title
+            )}
           </h1>
 
           {/* Description */}
           <p className="mt-6 text-base sm:text-lg text-zinc-300 leading-relaxed font-normal max-w-2xl">
-            Power Zone — zamonaviy Italiya va Germaniya trenajyorlari, individual yondashuv va qulay sharoitlar bilan Farg‘ona viloyati Quva tumani (Akbarobod markazi)dagi yangi avlod sport zali. Haftalik va oylik moslashuvchan tariflar bilan mashg‘ulotlarni bugunoq boshlang.
+            {hero.subtitle}
           </p>
 
           {/* CTA Buttons */}
@@ -62,60 +76,42 @@ export function LandingHero() {
           </div>
 
           {/* Bullet highlights */}
-          <div className="mt-8 pt-8 border-t border-zinc-800/80 flex flex-wrap gap-6 text-xs text-zinc-300 font-medium">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-              <span>Haftasiga istalgan 3 kun erkin tanlov</span>
+          {hero.bullets && hero.bullets.length > 0 && (
+            <div className="mt-8 pt-8 border-t border-zinc-800/80 flex flex-wrap gap-6 text-xs text-zinc-300 font-medium">
+              {hero.bullets.map((bullet, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
+                  <span>{bullet}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-              <span>Dush, sauna va shaxsiy shkafchalar</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-lime-400 shrink-0" />
-              <span>Professional trenerlar nazorati</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Stats Grid Under Hero */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-[#111827]/70 border border-zinc-800/80 backdrop-blur-xl">
-          <div className="p-4 text-center sm:text-left">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              1,200<span className="text-lime-400">+</span>
-            </div>
-            <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">
-              Kvadrat metr maydon
-            </p>
+        {stats && stats.length > 0 && (
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-[#111827]/70 border border-zinc-800/80 backdrop-blur-xl">
+            {stats.map((stat, idx) => (
+              <div
+                key={stat.id || idx}
+                className={`p-4 text-center sm:text-left ${
+                  idx > 0 ? 'sm:border-l border-zinc-800' : ''
+                } ${idx >= 2 ? 'border-t sm:border-t-0 border-zinc-800' : ''}`}
+              >
+                <div
+                  className={`text-3xl sm:text-4xl font-black tracking-tight ${
+                    idx === stats.length - 1 ? 'text-lime-400' : 'text-white'
+                  }`}
+                >
+                  {stat.value}
+                </div>
+                <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">
+                  {stat.label}
+                </p>
+              </div>
+            ))}
           </div>
-
-          <div className="p-4 text-center sm:text-left border-l border-zinc-800">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              60<span className="text-lime-400">+</span>
-            </div>
-            <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">
-              Zamonaviy trenajyorlar
-            </p>
-          </div>
-
-          <div className="p-4 text-center sm:text-left border-t sm:border-t-0 sm:border-l border-zinc-800">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              15<span className="text-lime-400">+</span>
-            </div>
-            <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">
-              Malakali murabbiylar
-            </p>
-          </div>
-
-          <div className="p-4 text-center sm:text-left border-t sm:border-t-0 sm:border-l border-zinc-800">
-            <div className="text-3xl sm:text-4xl font-black text-lime-400 tracking-tight">
-              07:00 – 23:00
-            </div>
-            <p className="text-xs font-semibold text-zinc-400 mt-1 uppercase tracking-wider">
-              Haftasiga 7 kun ochiq
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );

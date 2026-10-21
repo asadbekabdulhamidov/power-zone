@@ -2,9 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Dumbbell, Shield, Send, ArrowUpRight, Globe, Share2 } from 'lucide-react';
+import { Dumbbell, Shield, Send, ArrowUpRight, Share2, Phone } from 'lucide-react';
+import { useFitnesFlow } from '@/context/fitnes-context';
 
 export function LandingFooter() {
+  const { websiteContent, plans } = useFitnesFlow();
+  const { contact } = websiteContent;
+  const activePlans = plans.filter((p) => p.status === 'active');
+
   return (
     <footer className="bg-[#060910] text-zinc-400 border-t border-zinc-800/80 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,35 +25,36 @@ export function LandingFooter() {
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm">
-              Farg‘ona viloyati, Quva tumani, Akbarobod markazidagi yuqori darajadagi fitnes klubi. Zamonaviy trenajyorlar, individual murabbiy nazorati, fin saunasi va sport bar.
+              {contact.address}. Zamonaviy trenajyorlar, individual murabbiy nazorati, fin saunasi va sport bar.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://t.me"
+                href={contact.telegramChannel || 'https://t.me/powerzone_quva'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-sky-400 hover:bg-zinc-800 transition-colors"
                 aria-label="Telegram"
+                title="Telegram Kanal"
               >
                 <Send className="w-4 h-4" />
               </a>
               <a
-                href="https://instagram.com"
+                href={contact.instagram || 'https://instagram.com/powerzone_quva'}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-pink-400 hover:bg-zinc-800 transition-colors"
                 aria-label="Instagram"
+                title="Instagram Sahifa"
               >
                 <Share2 className="w-4 h-4" />
               </a>
               <a
-                href="https://fitnesflow.uz"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-                aria-label="Veb-sayt"
+                href={`tel:${contact.phone?.replace(/[^0-9+]/g, '') || '+998901234567'}`}
+                className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-lime-400 hover:bg-zinc-800 transition-colors"
+                aria-label="Telefon"
+                title="Qo‘ng‘iroq qilish"
               >
-                <Globe className="w-4 h-4" />
+                <Phone className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -80,43 +86,30 @@ export function LandingFooter() {
                 </a>
               </li>
               <li>
-                <a href="#manzil" className="hover:text-lime-400 transition-colors">
-                  Manzil va xarita
+                <a href="#aloqa" className="hover:text-lime-400 transition-colors">
+                  Aloqa va Murojaat
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Col 4: Tariflar linklari */}
+          {/* Col 4: Dynamic Tariflar linklari */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               Tarif Rejalari
             </h4>
             <ul className="space-y-2.5 text-xs">
-              <li>
-                <a href="#tariflar" className="hover:text-lime-400 transition-colors">
-                  Haftasiga 3 kun — 200,000 UZS
-                </a>
-              </li>
-              <li>
-                <a href="#tariflar" className="hover:text-lime-400 transition-colors">
-                  Oylik cheklanmagan — 300,000 UZS
-                </a>
-              </li>
-              <li>
-                <a href="#tariflar" className="hover:text-lime-400 transition-colors">
-                  Bir martalik mashg‘ulot — 20,000 UZS
-                </a>
-              </li>
-              <li>
-                <a href="#tariflar" className="hover:text-lime-400 transition-colors">
-                  Shaxsiy murabbiy dasturi
-                </a>
-              </li>
+              {activePlans.slice(0, 4).map((p) => (
+                <li key={p.id}>
+                  <a href="#tariflar" className="hover:text-lime-400 transition-colors">
+                    {p.name}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Col 5: Visible Admin Portal Link (Important Requirement) */}
+          {/* Col 5: Visible Admin Portal Link */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-white mb-4">
               Ma’muriyat
@@ -127,7 +120,7 @@ export function LandingFooter() {
                 <span>Admin Boshqaruvi</span>
               </div>
               <p className="text-[11px] text-zinc-400 leading-snug">
-                Klub egalari va ma’murlar uchun yopiq boshqaruv tizimi.
+                Klub egalari va ma’murlar uchun boshqaruv tizimi.
               </p>
               <Link
                 href="/admin/login"

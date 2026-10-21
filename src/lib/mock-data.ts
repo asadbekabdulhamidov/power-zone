@@ -1,4 +1,11 @@
-import { MembershipPlan, Member, Payment, Product } from '@/types';
+import {
+  MembershipPlan,
+  Member,
+  Payment,
+  Product,
+  WebsiteContent,
+  ContactMessage,
+} from '@/types';
 
 export const INITIAL_MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
@@ -485,4 +492,125 @@ export const MOCK_MONTHLY_REVENUE_DATA = [
   { month: 'Avgust', revenue: 21500000 },
   { month: 'Sentabr', revenue: 24900000 },
   { month: 'Oktabr', revenue: 28100000 },
+];
+
+export const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
+  hero: {
+    badge: 'Farg‘ona, Quva • Akbaroboddagi Eng Zamonaviy Fitnes Klubi',
+    title: 'O‘zingizning Eng Kuchli Versiyangizni Yarating',
+    subtitle:
+      'Power Zone — zamonaviy Italiya va Germaniya trenajyorlari, individual yondashuv va qulay sharoitlar bilan Farg‘ona viloyati Quva tumani (Akbarobod markazi)dagi yangi avlod sport zali. Haftalik va oylik moslashuvchan tariflar bilan mashg‘ulotlarni bugunoq boshlang.',
+    bullets: [
+      'Haftasiga istalgan 3 kun erkin tanlov',
+      'Dush, sauna va shaxsiy shkafchalar',
+      'Professional trenerlar nazorati',
+    ],
+  },
+  stats: [
+    {
+      id: 'stat-1',
+      value: '1,200+',
+      label: 'Kvadrat metr maydon',
+    },
+    {
+      id: 'stat-2',
+      value: '60+',
+      label: 'Zamonaviy trenajyorlar',
+    },
+    {
+      id: 'stat-3',
+      value: '15+',
+      label: 'Malakali murabbiylar',
+    },
+    {
+      id: 'stat-4',
+      value: '07:00 – 23:00',
+      label: 'Haftasiga 7 kun ochiq',
+    },
+  ],
+  features: [
+    {
+      id: 'feat-1',
+      iconName: 'Dumbbell',
+      title: 'Eng So‘nggi Trenajyorlar',
+      desc: 'Italiya va Germaniya ishlab chiqaruvchilarining zamonaviy biomexanik uskunalar to‘plami (Technogym, Hammer Strength).',
+    },
+    {
+      id: 'feat-2',
+      iconName: 'Users',
+      title: 'Professional Murabbiylar',
+      desc: 'Har bir a’zoga individual yondashuv, tana tahlili va shaxsiy mashg‘ulot dasturi ishlab chiquvchi sertifikatlangan instruktorlar.',
+    },
+    {
+      id: 'feat-3',
+      iconName: 'HeartPulse',
+      title: 'Kardio va Krossfit Zonalari',
+      desc: 'Yurak-qon tomir tizimini mustahkamlovchi yugurish yo‘lakchalari, velotrenajyorlar va funksional mashg‘ulot zonalari.',
+    },
+    {
+      id: 'feat-4',
+      iconName: 'Wind',
+      title: 'Mikroiqlim va Toza Havo',
+      desc: 'Zal ichida harorat va kislorod miqdorini barqaror ushlab turuvchi 4 bosqichli HEPA ventilyatsiya va sovutish tizimi.',
+    },
+    {
+      id: 'feat-5',
+      iconName: 'Sparkles',
+      title: 'Sauna va Qulay Kiyinish Xonalari',
+      desc: 'Mashg‘ulotdan so‘ng mushaklarni dam oldirish uchun fin saunasi, keng shaxsiy shkafchalar va zamonaviy dush kabinalari.',
+    },
+    {
+      id: 'feat-6',
+      iconName: 'ShieldCheck',
+      title: 'Shaffof Boshqaruv va Qulaylik',
+      desc: 'Abonementingiz, tashriflaringiz va to‘lovlaringiz Power Zone raqamli tizimida 100% aniq va shaffof qayd etiladi.',
+    },
+  ],
+  banner: {
+    badge: 'Individual Yondashuv',
+    title: 'Birinchi Mashg‘ulotda Murabbiy Maslahati Mutlaqo Bepul',
+    desc: 'Yangi boshlayotgan bo‘lsangiz, tajribali murabbiyimiz trenajyorlardan to‘g‘ri foydalanishni tushuntiradi, jismoniy holatingizni baholaydi va maqsadlaringizga mos mashqlar rejasini tuzishda ko‘maklashadi.',
+    linkText: 'Tariflar bilan tanishing va a’zo bo‘ling',
+  },
+  contact: {
+    phone: '+998 (90) 123-45-67',
+    email: 'info@powerzone.uz',
+    address: 'Farg‘ona viloyati, Quva tumani, Akbarobod markazi',
+    landmark: 'Akbarobod markazi, asosiy yo‘l bo‘yida',
+    workingHoursWeekdays: '06:30 – 23:00',
+    workingHoursSunday: '08:00 – 22:00',
+    telegramChannel: 'https://t.me/powerzone_quva',
+    telegramAdmin: 'https://t.me/powerzone_admin',
+    instagram: 'https://instagram.com/powerzone_quva',
+  },
+};
+
+export const INITIAL_CONTACT_MESSAGES: ContactMessage[] = [
+  {
+    id: 'msg-001',
+    fullName: 'Javohir Toshmatov',
+    phone: '+998905553322',
+    subject: 'Individual murabbiy xizmati',
+    message: 'Assalomu alaykum! Kechki soat 19:00 dan keyin shaxsiy instruktor bilan shug‘ullanish narxi qancha bo‘ladi?',
+    createdAt: '2026-10-21T09:15:00Z',
+    status: 'new',
+  },
+  {
+    id: 'msg-002',
+    fullName: 'Nodira Umarova',
+    phone: '+998934441188',
+    subject: 'Ayollar uchun mashg‘ulot vaqtlari',
+    message: 'Salom, zalingizda ayollar uchun alohida soatlar bormi yoki umumiy zalmi? Qizlar uchun murabbiy bormi?',
+    createdAt: '2026-10-20T16:40:00Z',
+    status: 'read',
+  },
+  {
+    id: 'msg-003',
+    fullName: 'Akbar Shokirov',
+    phone: '+998917772299',
+    subject: 'Haftasiga 3 kunlik tarif',
+    message: 'Haftasiga 3 kunlik tarifda istalgan kun kelsam bo‘ladimi? To‘lovni Click yoki Payme orqali qilsa bo‘ladimi?',
+    createdAt: '2026-10-19T11:20:00Z',
+    status: 'replied',
+  },
 ];

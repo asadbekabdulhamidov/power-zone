@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   PlusCircle,
   Settings,
+  MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFitnesFlow } from '@/context/fitnes-context';
@@ -28,7 +29,8 @@ export function AdminTopbar({
   subtitle,
   onOpenQuickPayment,
 }: TopbarProps) {
-  const { notifications, resetToDefault, adminProfile } = useFitnesFlow();
+  const { notifications, resetToDefault, adminProfile, contactMessages } = useFitnesFlow();
+  const unreadMessagesCount = contactMessages.filter((m) => m.status === 'new').length;
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
@@ -86,6 +88,20 @@ export function AdminTopbar({
         >
           <RefreshCw className="w-4 h-4" />
         </button>
+
+        {/* Inquiries / Messages Icon */}
+        <Link
+          href="/admin/messages"
+          className="relative p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/60 rounded-xl transition-colors border border-zinc-800/80"
+          title="Mijozlar murojaatlari va savollari"
+        >
+          <MessageSquare className="w-4 h-4" />
+          {unreadMessagesCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+              {unreadMessagesCount}
+            </span>
+          )}
+        </Link>
 
         {/* Notifications Icon */}
         <Link

@@ -9,12 +9,22 @@ import {
   NotificationItem,
   DashboardStats,
   AdminProfile,
+  WebsiteContent,
+  WebsiteHero,
+  WebsiteStat,
+  WebsiteFeature,
+  WebsiteBanner,
+  WebsiteContactInfo,
+  ContactMessage,
+  MessageStatus,
 } from '@/types';
 import {
   INITIAL_MEMBERS,
   INITIAL_MEMBERSHIP_PLANS,
   INITIAL_PAYMENTS,
   INITIAL_PRODUCTS,
+  INITIAL_WEBSITE_CONTENT,
+  INITIAL_CONTACT_MESSAGES,
 } from '@/lib/mock-data';
 import { getDaysDifference, generateId, generateReceiptNumber } from '@/lib/utils';
 
@@ -61,6 +71,22 @@ interface FitnesContextType {
   updateAdminPassword: (currentPass: string, newPass: string) => { success: boolean; message: string };
   updateAdminProfile: (data: Partial<AdminProfile>) => void;
 
+  // Website Content Management (CMS)
+  websiteContent: WebsiteContent;
+  updateWebsiteHero: (hero: Partial<WebsiteHero>) => void;
+  updateWebsiteStats: (stats: WebsiteStat[]) => void;
+  addWebsiteFeature: (feat: Omit<WebsiteFeature, 'id'>) => WebsiteFeature;
+  updateWebsiteFeature: (id: string, feat: Partial<WebsiteFeature>) => void;
+  deleteWebsiteFeature: (id: string) => void;
+  updateWebsiteBanner: (banner: Partial<WebsiteBanner>) => void;
+  updateWebsiteContact: (contact: Partial<WebsiteContactInfo>) => void;
+
+  // Contact Messages & Inquiries
+  contactMessages: ContactMessage[];
+  addContactMessage: (data: Omit<ContactMessage, 'id' | 'createdAt' | 'status'>) => ContactMessage;
+  updateMessageStatus: (id: string, status: MessageStatus) => void;
+  deleteContactMessage: (id: string) => void;
+
   // Reset to initial mock data
   resetToDefault: () => void;
 }
@@ -81,6 +107,8 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [adminProfile, setAdminProfile] = useState<AdminProfile>(DEFAULT_ADMIN);
+  const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(INITIAL_WEBSITE_CONTENT);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>(INITIAL_CONTACT_MESSAGES);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -92,12 +120,16 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       const savedPayments = localStorage.getItem('fitnesflow_payments');
       const savedProducts = localStorage.getItem('fitnesflow_products');
       const savedAdmin = localStorage.getItem('powerzone_admin_profile');
+      const savedContent = localStorage.getItem('powerzone_website_content');
+      const savedMessages = localStorage.getItem('powerzone_contact_messages');
 
       if (savedMembers) setMembers(JSON.parse(savedMembers));
       if (savedPlans) setPlans(JSON.parse(savedPlans));
       if (savedPayments) setPayments(JSON.parse(savedPayments));
       if (savedProducts) setProducts(JSON.parse(savedProducts));
       if (savedAdmin) setAdminProfile(JSON.parse(savedAdmin));
+      if (savedContent) setWebsiteContent(JSON.parse(savedContent));
+      if (savedMessages) setContactMessages(JSON.parse(savedMessages));
     } catch {
       // LocalStorage access might fail in private windows or restrictions
     } finally {
@@ -113,10 +145,12 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('fitnesflow_plans', JSON.stringify(plans));
       localStorage.setItem('fitnesflow_payments', JSON.stringify(payments));
       localStorage.setItem('fitnesflow_products', JSON.stringify(products));
+      localStorage.setItem('powerzone_website_content', JSON.stringify(websiteContent));
+      localStorage.setItem('powerzone_contact_messages', JSON.stringify(contactMessages));
     } catch {
       // Ignore storage errors
     }
-  }, [members, plans, payments, products, isInitialized]);
+  }, [members, plans, payments, products, websiteContent, contactMessages, isInitialized]);
 
   // Toast feedback system
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -416,18 +450,111 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     showToast('Admin profili ma’lumotlari yangilandi!', 'success');
   };
 
+  // Website Content Management actions
+  const updateWebsiteHero = (heroData: Partial<WebsiteHero>) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      hero: { ...prev.hero, ...heroData },
+    }));
+    showToast('Hero bo‘limi muvaffaqiyatli yangilandi!');
+  };
+
+  const updateWebsiteStats = (statsData: WebsiteStat[]) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      stats: statsData,
+    }));
+    showToast('Zal statistikasi ko‘rsatkichlari yangilandi!');
+  };
+
+  const addWebsiteFeature = (featData: Omit<WebsiteFeature, 'id'>): WebsiteFeature => {
+    const newFeature: WebsiteFeature = {
+      ...featData,
+      id: generateId('feat'),
+    };
+    setWebsiteContent((prev) => ({
+      ...prev,
+      features: [...prev.features, newFeature],
+    }));
+    showToast(`"${newFeature.title}" qulayligi qo‘shildi!`);
+    return newFeature;
+  };
+
+  const updateWebsiteFeature = (id: string, featData: Partial<WebsiteFeature>) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      features: prev.features.map((f) => (f.id === id ? { ...f, ...featData } : f)),
+    }));
+    showToast('Qulaylik kartochkasi ma’lumotlari yangilandi!');
+  };
+
+  const deleteWebsiteFeature = (id: string) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      features: prev.features.filter((f) => f.id !== id),
+    }));
+    showToast('Qulaylik kartochkasi o‘chirildi.', 'info');
+  };
+
+  const updateWebsiteBanner = (bannerData: Partial<WebsiteBanner>) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      banner: { ...prev.banner, ...bannerData },
+    }));
+    showToast('Aksiya banneri muvaffaqiyatli yangilandi!');
+  };
+
+  const updateWebsiteContact = (contactData: Partial<WebsiteContactInfo>) => {
+    setWebsiteContent((prev) => ({
+      ...prev,
+      contact: { ...prev.contact, ...contactData },
+    }));
+    showToast('Aloqa va ijtimoiy tarmoqlar yangilandi!');
+  };
+
+  // Contact Messages actions
+  const addContactMessage = (
+    data: Omit<ContactMessage, 'id' | 'createdAt' | 'status'>
+  ): ContactMessage => {
+    const newMsg: ContactMessage = {
+      ...data,
+      id: generateId('msg'),
+      createdAt: new Date().toISOString(),
+      status: 'new',
+    };
+    setContactMessages((prev) => [newMsg, ...prev]);
+    showToast('Murojaatingiz yuborildi! Tez orada siz bilan bog‘lanamiz.', 'success');
+    return newMsg;
+  };
+
+  const updateMessageStatus = (id: string, status: MessageStatus) => {
+    setContactMessages((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, status } : m))
+    );
+    showToast('Murojaat holati yangilandi.');
+  };
+
+  const deleteContactMessage = (id: string) => {
+    setContactMessages((prev) => prev.filter((m) => m.id !== id));
+    showToast('Murojaat o‘chirildi.', 'info');
+  };
+
   const resetToDefault = () => {
     setMembers(INITIAL_MEMBERS);
     setPlans(INITIAL_MEMBERSHIP_PLANS);
     setPayments(INITIAL_PAYMENTS);
     setProducts(INITIAL_PRODUCTS);
     setAdminProfile(DEFAULT_ADMIN);
+    setWebsiteContent(INITIAL_WEBSITE_CONTENT);
+    setContactMessages(INITIAL_CONTACT_MESSAGES);
     try {
       localStorage.removeItem('fitnesflow_members');
       localStorage.removeItem('fitnesflow_plans');
       localStorage.removeItem('fitnesflow_payments');
       localStorage.removeItem('fitnesflow_products');
       localStorage.removeItem('powerzone_admin_profile');
+      localStorage.removeItem('powerzone_website_content');
+      localStorage.removeItem('powerzone_contact_messages');
     } catch {
       // Ignore
     }
@@ -462,6 +589,18 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         adminProfile,
         updateAdminPassword,
         updateAdminProfile,
+        websiteContent,
+        updateWebsiteHero,
+        updateWebsiteStats,
+        addWebsiteFeature,
+        updateWebsiteFeature,
+        deleteWebsiteFeature,
+        updateWebsiteBanner,
+        updateWebsiteContact,
+        contactMessages,
+        addContactMessage,
+        updateMessageStatus,
+        deleteContactMessage,
         resetToDefault,
       }}
     >

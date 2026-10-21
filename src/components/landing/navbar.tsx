@@ -13,7 +13,7 @@ export function LandingNavbar() {
     { name: 'Galereya', href: '#galereya' },
     { name: 'Tariflar', href: '#tariflar' },
     { name: 'Fitnes Bar', href: '#mahsulotlar' },
-    { name: 'Manzil', href: '#manzil' },
+    { name: 'Aloqa & Manzil', href: '#aloqa' },
   ];
 
   return (

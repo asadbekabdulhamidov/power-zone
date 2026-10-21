@@ -83,6 +83,21 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Club Requisites Overview**: Visual summary card displaying Power Zone details (Quva, Akbarobod, operating hours 07:00–23:00, UZS currency).
 - [x] **TopBar & Sidebar Integration**: Navigation links to `/admin/settings` added in the sidebar and topbar with settings shortcut icon and interactive profile card.
 
+### J. Website Content Management (CMS) (`/admin/website`)
+- [x] **Hero Content CRUD**: Edit badge, headline, subtitle, and dynamic bullet points list with add/remove items.
+- [x] **Gym Statistics CRUD**: Edit all 4 metric blocks (value and label) with live landing page reflection.
+- [x] **Club Facilities (Features) CRUD**: Full CRUD modal interface to add, edit, or delete facility cards, complete with icon picker (Dumbbell, Users, HeartPulse, Wind, Sparkles, ShieldCheck, Flame, Trophy).
+- [x] **Promo Banner CRUD**: Edit individual approach banner badge, headline, description, and link CTA.
+- [x] **Contact & Socials CRUD**: Edit phone number, email, address, landmark, working hours, Telegram channel, Telegram admin chat, and Instagram links.
+- [x] **Dynamic Landing Components**: `LandingHero`, `LandingAbout`, `LandingLocationContact`, and `LandingFooter` read directly from `websiteContent` state with instant live updates.
+
+### K. Customer Inquiries & Messages Management (`/admin/messages`)
+- [x] **Interactive Public Inquiry Form**: Landing page contact form allows visitors to submit inquiries (name, phone, subject, message) directly into the admin system.
+- [x] **Inquiry Management Dashboard**: View, search, and filter incoming messages by status (*All*, *New*, *Read*).
+- [x] **Direct Outreach Actions**: One-click copy phone, direct phone call link (`tel:`), direct Telegram chat link (`t.me/`), mark as read, and delete message.
+- [x] **Real-time Badges**: Unread message count badges in admin sidebar and topbar.
+- [x] **Manual Inquiry Logger**: Modal to allow gym receptionists/admins to log phone or walk-in inquiries manually.
+
 ---
 
 ## 2. Partially Implemented Features
@@ -116,6 +131,8 @@ All listed features below have been inspected in code and verified via a clean p
 | `/admin/notifications` | `src/app/admin/notifications/page.tsx` | Expiration Alerts & Outreach |
 | `/admin/products` | `src/app/admin/products/page.tsx` | Inventory & Bar Products CRUD |
 | `/admin/settings` | `src/app/admin/settings/page.tsx` | Admin Password Change & Club Settings |
+| `/admin/website` | `src/app/admin/website/page.tsx` | Website Content CMS (Hero, Stats, Features, Banner, Contact) |
+| `/admin/messages` | `src/app/admin/messages/page.tsx` | Customer Inquiries & Messages Management |
 
 ---
 

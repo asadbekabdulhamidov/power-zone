@@ -11,6 +11,8 @@ import {
   Bell,
   ShoppingBag,
   Settings,
+  Globe,
+  MessageSquare,
   ExternalLink,
   LogOut,
   Dumbbell,
@@ -25,7 +27,8 @@ interface SidebarProps {
 
 export function AdminSidebar({ onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
-  const { notifications } = useFitnesFlow();
+  const { notifications, contactMessages } = useFitnesFlow();
+  const unreadMessagesCount = contactMessages.filter((m) => m.status === 'new').length;
 
   const navItems = [
     {
@@ -56,12 +59,23 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
       badge: notifications.length > 0 ? notifications.length : undefined,
     },
     {
+      name: 'Murojaatlar',
+      href: '/admin/messages',
+      icon: MessageSquare,
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
+    },
+    {
       name: 'Mahsulotlar katalogi',
       href: '/admin/products',
       icon: ShoppingBag,
     },
     {
-      name: 'Sozlamalar',
+      name: 'Sayt boshqaruvi',
+      href: '/admin/website',
+      icon: Globe,
+    },
+    {
+      name: 'Sozlamalar & Parol',
       href: '/admin/settings',
       icon: Settings,
     },

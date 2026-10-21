@@ -101,3 +101,62 @@ export interface AdminProfile {
   role: string;
   password: string;
 }
+
+export interface WebsiteFeature {
+  id: string;
+  title: string;
+  desc: string;
+  iconName: 'Dumbbell' | 'Users' | 'HeartPulse' | 'Wind' | 'Sparkles' | 'ShieldCheck' | 'Flame' | 'Trophy';
+}
+
+export interface WebsiteStat {
+  id: string;
+  value: string;
+  label: string;
+}
+
+export interface WebsiteHero {
+  badge: string;
+  title: string;
+  subtitle: string;
+  bullets: string[];
+}
+
+export interface WebsiteBanner {
+  badge: string;
+  title: string;
+  desc: string;
+  linkText: string;
+}
+
+export interface WebsiteContactInfo {
+  phone: string;
+  email: string;
+  address: string;
+  landmark: string;
+  workingHoursWeekdays: string;
+  workingHoursSunday: string;
+  telegramChannel: string;
+  telegramAdmin: string;
+  instagram: string;
+}
+
+export interface WebsiteContent {
+  hero: WebsiteHero;
+  stats: WebsiteStat[];
+  features: WebsiteFeature[];
+  banner: WebsiteBanner;
+  contact: WebsiteContactInfo;
+}
+
+export type MessageStatus = 'new' | 'read' | 'replied';
+
+export interface ContactMessage {
+  id: string;
+  fullName: string;
+  phone: string;
+  subject?: string;
+  message: string;
+  createdAt: string; // ISO format
+  status: MessageStatus;
+}
