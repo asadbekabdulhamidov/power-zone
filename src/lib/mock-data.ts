@@ -372,7 +372,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-001',
     name: 'HydraLife Gazsiz Suv',
-    imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
     category: 'water',
     categoryLabel: 'Suv',
     description: 'Tabiiy tozalangan mineral suv, 0.5 litr. Qulay sport qopqoqli.',
@@ -408,7 +408,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-004',
     name: 'BCAA 2:1:1 Energy Powder',
-    imageUrl: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=600&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80',
     category: 'vitamins',
     categoryLabel: 'Vitaminlar',
     description: 'Tarmog‘langan aminokislotalar kompleksi (300g). Charchoqni kamaytiradi va tiklanishni tezlashtiradi.',
@@ -432,7 +432,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-006',
     name: 'Power Zone Sport Sochig‘i',
-    imageUrl: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
     category: 'accessories',
     categoryLabel: 'Aksessuarlar',
     description: 'Mikrofibra matoli, tez quriydigan va chang tortmaydigan brend sport sochig‘i.',
@@ -456,7 +456,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-008',
     name: 'Protein Bar Choco Crunch',
-    imageUrl: 'https://images.unsplash.com/photo-1622484216250-9d0442345e7f?auto=format&fit=crop&w=600&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=600&q=80',
     category: 'other',
     categoryLabel: 'Boshqa',
     description: '20g oqsil, 0g qo‘shilgan shakar, 60g qulay gazak.',
@@ -468,7 +468,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: 'prod-009',
     name: 'Klassik Shaker 700ml',
-    imageUrl: 'https://images.unsplash.com/photo-1577705998148-6da4f3963bc8?auto=format&fit=crop&w=600&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=600&q=80',
     category: 'accessories',
     categoryLabel: 'Aksessuarlar',
     description: 'Zanglamas po‘lat sharchali, germetik yopiladigan protein shaykeri.',

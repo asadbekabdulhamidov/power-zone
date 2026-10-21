@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   ShoppingBag,
   Plus,
@@ -9,19 +9,134 @@ import {
   Trash2,
   Package,
   AlertCircle,
+  Camera,
+  Upload,
+  RefreshCw,
+  X,
+  Sparkles,
+  Check,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Modal } from '@/components/ui/modal';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { Product, ProductCategory } from '@/types';
 import { formatUZS } from '@/lib/utils';
 
+// Verified, high-definition preset photos for gym products
+const PRESET_PRODUCT_IMAGES: {
+  label: string;
+  category: ProductCategory;
+  url: string;
+}[] = [
+  {
+    label: 'Mineral Suv',
+    category: 'water',
+    url: 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Whey Protein',
+    category: 'vitamins',
+    url: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Izotonik Ichimlik',
+    category: 'sports_drinks',
+    url: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'BCAA Kukun',
+    category: 'vitamins',
+    url: 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Energetik Ichimlik',
+    category: 'sports_drinks',
+    url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Sport Sochig‘i',
+    category: 'accessories',
+    url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Multivitamin',
+    category: 'vitamins',
+    url: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Protein Batonchik',
+    category: 'other',
+    url: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=600&q=80',
+  },
+  {
+    label: 'Shayker',
+    category: 'accessories',
+    url: 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=600&q=80',
+  },
+];
+
+const CATEGORY_DEFAULT_IMAGES: Record<ProductCategory, string> = {
+  water:
+    'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
+  vitamins:
+    'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
+  sports_drinks:
+    'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=600&q=80',
+  accessories:
+    'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
+  other:
+    'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=600&q=80',
+};
+
+// Resilient product table thumbnail
+function AdminProductThumbnail({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !src) {
+    return (
+      <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+        <Package className="w-5 h-5 text-lime-400" />
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setHasError(true)}
+      className="w-full h-full object-cover"
+    />
+  );
+}
+
 export default function ProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct, toggleProductActive } =
-    useFitnesFlow();
+  const {
+    products,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    toggleProductActive,
+    resetProducts,
+  } = useFitnesFlow();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -40,6 +155,20 @@ export default function ProductsPage() {
   const [formUnit, setFormUnit] = useState('dona');
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Camera & File upload for Add Product
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Camera & File upload for Edit Product
+  const [isEditCameraActive, setIsEditCameraActive] = useState(false);
+  const [editCameraError, setEditCameraError] = useState<string | null>(null);
+  const editVideoRef = useRef<HTMLVideoElement | null>(null);
+  const editStreamRef = useRef<MediaStream | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Category labels map
   const categoryLabels: Record<ProductCategory, string> = {
     water: 'Suv',
@@ -47,6 +176,136 @@ export default function ProductsPage() {
     sports_drinks: 'Sport ichimliklari',
     accessories: 'Aksessuarlar',
     other: 'Boshqa',
+  };
+
+  // Camera functions for Add Modal
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Kamera texnologiyasi ushbu brauzerda qo‘llab-quvvatlanmaydi.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setIsCameraActive(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      }, 100);
+    } catch {
+      setCameraError(
+        'Kameraga ulanib bo‘lmadi. Brauzerda kameraga ruxsat berilganligini tekshiring yoki qurilmadan rasm yuklang.'
+      );
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth || 640;
+    canvas.height = videoRef.current.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setFormImageUrl(dataUrl);
+    }
+    stopCamera();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setCameraError('Faqat rasm formatidagi fayllarni yuklash mumkin (JPG, PNG, WebP).');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setFormImageUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Camera functions for Edit Modal
+  const startEditCamera = async () => {
+    setEditCameraError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Kamera mavjud emas.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false,
+      });
+      editStreamRef.current = stream;
+      setIsEditCameraActive(true);
+      setTimeout(() => {
+        if (editVideoRef.current) {
+          editVideoRef.current.srcObject = stream;
+          editVideoRef.current.play();
+        }
+      }, 100);
+    } catch {
+      setEditCameraError(
+        'Kameraga ulanib bo‘lmadi. Qurilmadan rasm yuklashdan foydalanishingiz mumkin.'
+      );
+    }
+  };
+
+  const stopEditCamera = () => {
+    if (editStreamRef.current) {
+      editStreamRef.current.getTracks().forEach((track) => track.stop());
+      editStreamRef.current = null;
+    }
+    setIsEditCameraActive(false);
+  };
+
+  const captureEditPhoto = () => {
+    if (!editVideoRef.current || !editingProduct) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = editVideoRef.current.videoWidth || 640;
+    canvas.height = editVideoRef.current.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(editVideoRef.current, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      setEditingProduct({ ...editingProduct, imageUrl: dataUrl });
+    }
+    stopEditCamera();
+  };
+
+  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingProduct) {
+      if (!file.type.startsWith('image/')) {
+        setEditCameraError('Faqat rasm formatidagi fayllarni yuklash mumkin.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setEditingProduct({ ...editingProduct, imageUrl: reader.result });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Filtered products
@@ -88,7 +347,8 @@ export default function ProductsPage() {
 
     const defaultImg =
       formImageUrl.trim() ||
-      'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=600&q=80';
+      CATEGORY_DEFAULT_IMAGES[formCategory] ||
+      CATEGORY_DEFAULT_IMAGES.water;
 
     addProduct({
       name: formName.trim(),
@@ -108,6 +368,7 @@ export default function ProductsPage() {
     setFormDescription('');
     setFormPrice(10000);
     setFormStock(20);
+    stopCamera();
     setIsAddModalOpen(false);
   };
 
@@ -116,11 +377,16 @@ export default function ProductsPage() {
     e.preventDefault();
     if (!editingProduct) return;
 
+    const finalImg =
+      editingProduct.imageUrl.trim() ||
+      CATEGORY_DEFAULT_IMAGES[editingProduct.category] ||
+      CATEGORY_DEFAULT_IMAGES.water;
+
     updateProduct(editingProduct.id, {
       name: editingProduct.name,
       category: editingProduct.category,
       categoryLabel: categoryLabels[editingProduct.category],
-      imageUrl: editingProduct.imageUrl,
+      imageUrl: finalImg,
       description: editingProduct.description,
       price: Number(editingProduct.price),
       stockQuantity: Number(editingProduct.stockQuantity),
@@ -128,6 +394,7 @@ export default function ProductsPage() {
       unit: editingProduct.unit,
     });
 
+    stopEditCamera();
     setEditingProduct(null);
   };
 
@@ -147,56 +414,75 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => setIsAddModalOpen(true)}
-          className="shadow-lg shadow-lime-500/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Yangi Mahsulot Qo‘shish</span>
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (
+                confirm(
+                  'Barcha standart mahsulotlar va rasmlarni yangilamoqchimisiz? (Bu buzilgan rasmlarni tuzatadi)'
+                )
+              ) {
+                resetProducts();
+              }
+            }}
+            className="border-zinc-700 hover:border-zinc-600 text-zinc-300 hover:text-white"
+            title="Standart mahsulotlar va rasmlarni yangilash"
+          >
+            <RefreshCw className="w-4 h-4 text-lime-400" />
+            <span>Rasmlarni Yangilash</span>
+          </Button>
+
+          <Button
+            variant="primary"
+            onClick={() => {
+              setFormError(null);
+              setIsAddModalOpen(true);
+            }}
+            className="shadow-lg shadow-lime-500/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yangi Mahsulot Qo‘shish</span>
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#111827]/80 border border-zinc-800 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              Faol Mahsulotlar
-            </p>
-            <div className="text-2xl font-black text-lime-400 mt-1">
-              {products.filter((p) => p.isActive).length} ta
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">Mijozlar saytida ko‘rinadi</p>
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Jami Mahsulot Turlari
+            </span>
+            <div className="text-2xl font-black text-white mt-1">{products.length}</div>
+            <p className="text-[11px] text-zinc-400 mt-0.5">Faol tovarlar soni</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-lime-500/10 border border-lime-500/25 text-lime-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-zinc-700 text-lime-400 flex items-center justify-center">
             <ShoppingBag className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#111827]/80 border border-zinc-800 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              Ombordagi Mahsulotlar Qiymati
-            </p>
-            <div className="text-2xl font-black text-white mt-1">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Ombor Qiymati
+            </span>
+            <div className="text-2xl font-black text-lime-400 mt-1">
               {formatUZS(totalStockValue)}
             </div>
-            <p className="text-[11px] text-zinc-400 mt-0.5">Barcha tovarlar summasi</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">Jami tovarlar bahosi</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-lime-500/10 border border-lime-500/20 text-lime-400 flex items-center justify-center">
             <Package className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#101726]/80 border border-zinc-800 flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-[#111827]/80 border border-zinc-800 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              Kam Qolgan Tovarlar
-            </p>
-            <div className="text-2xl font-black text-amber-400 mt-1">
-              {lowStockCount} ta
-            </div>
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+              Kam Qolgan Tovar
+            </span>
+            <div className="text-2xl font-black text-amber-400 mt-1">{lowStockCount}</div>
             <p className="text-[11px] text-zinc-400 mt-0.5">Qoldig‘i 10 donadan kam</p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
@@ -229,7 +515,7 @@ export default function ProductsPage() {
             <button
               key={cat.id}
               onClick={() => setCategoryFilter(cat.id)}
-              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap ${
+              className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all whitespace-nowrap cursor-pointer ${
                 categoryFilter === cat.id
                   ? 'bg-lime-500 text-zinc-950 border-lime-400 shadow-sm'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
@@ -260,12 +546,10 @@ export default function ProductsPage() {
                 {/* Photo & Name */}
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <AdminProductThumbnail
                         src={product.imageUrl}
                         alt={product.name}
-                        className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
@@ -317,7 +601,7 @@ export default function ProductsPage() {
                 <TableCell>
                   <button
                     onClick={() => toggleProductActive(product.id)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                       product.isActive
                         ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
                         : 'bg-zinc-800 text-zinc-400 border-zinc-700'
@@ -339,7 +623,7 @@ export default function ProductsPage() {
                     <button
                       onClick={() => setEditingProduct(product)}
                       title="Tahrirlash"
-                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors"
+                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors cursor-pointer"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
@@ -356,7 +640,7 @@ export default function ProductsPage() {
                         }
                       }}
                       title="O‘chirish"
-                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors"
+                      className="p-1.5 rounded-lg bg-zinc-800 hover:bg-rose-950 hover:text-rose-400 text-zinc-400 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -376,12 +660,17 @@ export default function ProductsPage() {
         </Table>
       </div>
 
+      {/* ========================================================= */}
       {/* ADD PRODUCT MODAL */}
+      {/* ========================================================= */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          stopCamera();
+          setIsAddModalOpen(false);
+        }}
         title="Yangi Mahsulot Qo‘shish"
-        description="Fitnes bar yoki resepshn uchun yangi tovar kartasini yarating."
+        description="Fitnes bar yoki resepshn uchun yangi tovar kartasini yarating. Rasm qurilmadan yuklanishi, kameradan olinishi yoki havoladan kiritilishi mumkin."
         maxWidth="lg"
       >
         <form onSubmit={handleAddSubmit} className="space-y-4">
@@ -410,7 +699,14 @@ export default function ProductsPage() {
                 { label: 'Boshqa (Batonchiklar, gazaklar)', value: 'other' },
               ]}
               value={formCategory}
-              onChange={(e) => setFormCategory(e.target.value as ProductCategory)}
+              onChange={(e) => {
+                const newCat = e.target.value as ProductCategory;
+                setFormCategory(newCat);
+                // If no image is provided yet, auto-suggest default category image
+                if (!formImageUrl) {
+                  setFormImageUrl(CATEGORY_DEFAULT_IMAGES[newCat]);
+                }
+              }}
             />
 
             <Input
@@ -448,13 +744,175 @@ export default function ProductsPage() {
             />
           </div>
 
-          <Input
-            label="Rasm Havolasi (URL)"
-            placeholder="https://images.unsplash.com/..."
-            value={formImageUrl}
-            onChange={(e) => setFormImageUrl(e.target.value)}
-            helperText="Bo‘sh qoldirilsa, avtomatik mos rasm tanlanadi."
-          />
+          {/* PRODUCT IMAGE SECTION WITH UPLOAD, CAMERA, PRESETS & URL */}
+          <div className="space-y-3 pt-2 pb-1 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-lime-400" />
+                <span>Mahsulot Rasmi</span>
+              </label>
+              {formImageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setFormImageUrl('')}
+                  className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  <span>Rasmni tozalash</span>
+                </button>
+              )}
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            {/* Action buttons: Upload from device / Camera / Presets */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5 text-lime-400" />
+                <span>Qurilmadan yuklash</span>
+              </Button>
+
+              {!isCameraActive ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={startCamera}
+                  className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
+                >
+                  <Camera className="w-3.5 h-3.5 mr-1.5 text-sky-400" />
+                  <span>Kameradan suratga olish</span>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={stopCamera}
+                  className="bg-rose-950/40 border-rose-800 text-rose-300 text-xs py-1.5 h-auto"
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  <span>Kamerani yopish</span>
+                </Button>
+              )}
+            </div>
+
+            {/* Camera error message */}
+            {cameraError && (
+              <div className="text-xs text-rose-400 bg-rose-950/50 p-2.5 rounded-xl border border-rose-900/60 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{cameraError}</span>
+              </div>
+            )}
+
+            {/* Live Camera View */}
+            {isCameraActive && (
+              <div className="relative rounded-xl overflow-hidden border-2 border-lime-500/50 bg-black aspect-video max-w-sm mx-auto shadow-lg">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3 px-4">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    onClick={capturePhoto}
+                    className="shadow-lg shadow-lime-500/30 text-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 mr-1.5" />
+                    <span>Suratga olish</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={stopCamera}
+                    className="bg-black/60 backdrop-blur-md text-white text-xs border-zinc-700"
+                  >
+                    Bekor qilish
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Image Preview & URL input */}
+            <div className="flex items-center gap-3">
+              {formImageUrl ? (
+                <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-lime-500/50 bg-zinc-900 shrink-0 shadow-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={formImageUrl}
+                    alt="Tanlangan rasm"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-1 right-1 bg-lime-500 text-zinc-950 rounded-full p-0.5 shadow">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center text-zinc-600 shrink-0">
+                  <ImageIcon className="w-5 h-5 mb-0.5" />
+                  <span className="text-[9px]">Rasm yo‘q</span>
+                </div>
+              )}
+
+              <div className="flex-1">
+                <Input
+                  placeholder="https://images.unsplash.com/... yoki rasm havolasi"
+                  value={formImageUrl}
+                  onChange={(e) => setFormImageUrl(e.target.value)}
+                  className="text-xs bg-[#090d16]"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1">
+                  Qurilmadan yuklang, kameradan oling yoki internet havolasini kiriting.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick preset chips */}
+            <div>
+              <span className="text-[11px] font-medium text-zinc-400 block mb-1.5 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-lime-400" />
+                <span>Tezkor namunaviy rasmlar (1 marta bosishda tanlanadi):</span>
+              </span>
+              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                {PRESET_PRODUCT_IMAGES.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setFormImageUrl(preset.url);
+                      setFormCategory(preset.category);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      formImageUrl === preset.url
+                        ? 'bg-lime-500/20 border-lime-500 text-lime-300 font-bold'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                    }`}
+                  >
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           <Input
             label="Qisqacha Tavsif"
@@ -467,7 +925,10 @@ export default function ProductsPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsAddModalOpen(false)}
+              onClick={() => {
+                stopCamera();
+                setIsAddModalOpen(false);
+              }}
             >
               Bekor qilish
             </Button>
@@ -479,12 +940,18 @@ export default function ProductsPage() {
         </form>
       </Modal>
 
+      {/* ========================================================= */}
       {/* EDIT PRODUCT MODAL */}
+      {/* ========================================================= */}
       {editingProduct && (
         <Modal
           isOpen={!!editingProduct}
-          onClose={() => setEditingProduct(null)}
+          onClose={() => {
+            stopEditCamera();
+            setEditingProduct(null);
+          }}
           title="Mahsulotni Tahrirlash"
+          description="Mahsulot narxi, qoldig‘i, nomi va rasmini yangilang."
           maxWidth="lg"
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -556,13 +1023,181 @@ export default function ProductsPage() {
               />
             </div>
 
-            <Input
-              label="Rasm URL"
-              value={editingProduct.imageUrl}
-              onChange={(e) =>
-                setEditingProduct({ ...editingProduct, imageUrl: e.target.value })
-              }
-            />
+            {/* EDIT MODAL PRODUCT IMAGE SECTION */}
+            <div className="space-y-3 pt-2 pb-1 border-t border-zinc-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-lime-400" />
+                  <span>Mahsulot Rasmini O‘zgartirish</span>
+                </label>
+                {editingProduct.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingProduct({ ...editingProduct, imageUrl: '' })
+                    }
+                    className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                    <span>Rasmni tozalash</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={editFileInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={handleEditFileChange}
+              />
+
+              {/* Buttons: Upload / Camera */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editFileInputRef.current?.click()}
+                  className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5 text-lime-400" />
+                  <span>Qurilmadan yangi rasm yuklash</span>
+                </Button>
+
+                {!isEditCameraActive ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={startEditCamera}
+                    className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
+                  >
+                    <Camera className="w-3.5 h-3.5 mr-1.5 text-sky-400" />
+                    <span>Kameradan suratga olish</span>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={stopEditCamera}
+                    className="bg-rose-950/40 border-rose-800 text-rose-300 text-xs py-1.5 h-auto"
+                  >
+                    <X className="w-3.5 h-3.5 mr-1" />
+                    <span>Kamerani yopish</span>
+                  </Button>
+                )}
+              </div>
+
+              {editCameraError && (
+                <div className="text-xs text-rose-400 bg-rose-950/50 p-2.5 rounded-xl border border-rose-900/60 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{editCameraError}</span>
+                </div>
+              )}
+
+              {/* Live Camera View for Edit */}
+              {isEditCameraActive && (
+                <div className="relative rounded-xl overflow-hidden border-2 border-lime-500/50 bg-black aspect-video max-w-sm mx-auto shadow-lg">
+                  <video
+                    ref={editVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3 px-4">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="primary"
+                      onClick={captureEditPhoto}
+                      className="shadow-lg shadow-lime-500/30 text-xs"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1.5" />
+                      <span>Suratga olish</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={stopEditCamera}
+                      className="bg-black/60 backdrop-blur-md text-white text-xs border-zinc-700"
+                    >
+                      Bekor qilish
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview & URL Input */}
+              <div className="flex items-center gap-3">
+                {editingProduct.imageUrl ? (
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-lime-500/50 bg-zinc-900 shrink-0 shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editingProduct.imageUrl}
+                      alt="Mahsulot rasmi"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-1 right-1 bg-lime-500 text-zinc-950 rounded-full p-0.5 shadow">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center text-zinc-600 shrink-0">
+                    <ImageIcon className="w-5 h-5 mb-0.5" />
+                    <span className="text-[9px]">Rasm yo‘q</span>
+                  </div>
+                )}
+
+                <div className="flex-1">
+                  <Input
+                    label="Rasm Havolasi (URL)"
+                    value={editingProduct.imageUrl}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        imageUrl: e.target.value,
+                      })
+                    }
+                    className="text-xs bg-[#090d16]"
+                  />
+                </div>
+              </div>
+
+              {/* Presets in Edit Modal */}
+              <div>
+                <span className="text-[11px] font-medium text-zinc-400 block mb-1.5 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-lime-400" />
+                  <span>Namunaviy rasmga almashtirish:</span>
+                </span>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                  {PRESET_PRODUCT_IMAGES.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() =>
+                        setEditingProduct({
+                          ...editingProduct,
+                          imageUrl: preset.url,
+                          category: preset.category,
+                        })
+                      }
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
+                        editingProduct.imageUrl === preset.url
+                          ? 'bg-lime-500/20 border-lime-500 text-lime-300 font-bold'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <Input
               label="Tavsif"
@@ -600,7 +1235,10 @@ export default function ProductsPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setEditingProduct(null)}
+                onClick={() => {
+                  stopEditCamera();
+                  setEditingProduct(null);
+                }}
               >
                 Bekor qilish
               </Button>

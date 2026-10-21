@@ -1,9 +1,78 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingBag, Coffee } from 'lucide-react';
+import { ShoppingBag, Coffee, Dumbbell, Sparkles, Droplets } from 'lucide-react';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import { formatUZS } from '@/lib/utils';
+
+function ProductCardImage({
+  src,
+  alt,
+  category,
+}: {
+  src: string;
+  alt: string;
+  category: string;
+}) {
+  const [errorCount, setErrorCount] = useState(0);
+
+  const fallbackUrls: Record<string, string> = {
+    water:
+      'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
+    vitamins:
+      'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
+    sports_drinks:
+      'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=600&q=80',
+    accessories:
+      'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
+    other:
+      'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=600&q=80',
+  };
+
+  const currentSrc =
+    errorCount === 0
+      ? src
+      : errorCount === 1
+      ? fallbackUrls[category] || fallbackUrls.other
+      : null;
+
+  if (!currentSrc || errorCount >= 2) {
+    const getCategoryIcon = () => {
+      switch (category) {
+        case 'water':
+          return <Droplets className="w-7 h-7 text-sky-400" />;
+        case 'vitamins':
+          return <Sparkles className="w-7 h-7 text-amber-400" />;
+        case 'accessories':
+          return <Dumbbell className="w-7 h-7 text-lime-400" />;
+        default:
+          return <Coffee className="w-7 h-7 text-lime-400" />;
+      }
+    };
+
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 text-zinc-500 p-4 select-none">
+        <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/60 flex items-center justify-center mb-2 shadow-inner">
+          {getCategoryIcon()}
+        </div>
+        <span className="text-[11px] font-semibold text-zinc-300 text-center line-clamp-1 px-2">
+          {alt}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={currentSrc}
+      alt={alt}
+      onError={() => setErrorCount((prev) => prev + 1)}
+      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+      loading="lazy"
+    />
+  );
+}
 
 export function LandingProductsShowcase() {
   const { products, showToast } = useFitnesFlow();
@@ -76,11 +145,10 @@ export function LandingProductsShowcase() {
               <div>
                 {/* Image Container */}
                 <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 mb-4 border border-zinc-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <ProductCardImage
                     src={product.imageUrl}
                     alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    category={product.category}
                   />
                   <div className="absolute top-2.5 left-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-black/75 backdrop-blur-md text-lime-400 px-2 py-0.5 rounded-full border border-white/10">

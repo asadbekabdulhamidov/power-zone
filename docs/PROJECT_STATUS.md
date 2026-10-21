@@ -77,6 +77,11 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] Stock quantity tracking with low stock alert (< 10 items).
 - [x] Active / Inactive status toggle (inactive products are excluded from the landing page).
 - [x] Create and edit product dialogs.
+- [x] **Device File Photo Upload**: Direct file upload from computer or phone file storage with instant preview.
+- [x] **Live Web Camera Photo Capture**: Administrators can use device camera (`getUserMedia`) to photograph new products or gym bar snacks directly in the modal.
+- [x] **One-Click Preset Photos**: Instant category-based gym product photo suggestions (Water, Whey Protein, Isotonic, BCAA, Towel, Shaker, etc.).
+- [x] **Resilient Image Fallback & Auto-Healing**: Added multi-level error handling (`ProductCardImage` & `AdminProductThumbnail`) so broken URLs never display blank or broken icon boxes. Auto-heals cached legacy URLs in `localStorage`.
+- [x] **One-Click Refresh Tool ("Rasmlarni Yangilash")**: Added toolbar button to reset and update all product images to official verified photos.
 
 ### I. Admin Settings & Password Management (`/admin/settings`)
 - [x] **Admin Password Change Form**: Secure form with current password validation, minimum 6 characters requirement, new password match verification, and show/hide password toggles.
