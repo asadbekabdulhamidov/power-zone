@@ -49,8 +49,8 @@ All listed features below have been inspected in code and verified via a clean p
 
 ### E. Membership Plans Management (`/admin/memberships`)
 - [x] Plan cards grid displaying active and archived plans.
-- [x] Plan creation modal (name, price in UZS, duration in days, access type, feature bullets).
-- [x] Edit plan modal.
+- [x] Plan creation modal with dynamic bullet points (features) list editor and popular badge toggle.
+- [x] **Edit Plan Modal with Bullet Points Editor**: Allows administrators to dynamically edit, add (+), remove (trash), and customize bullet points (tarif imkoniyatlari) for each plan, as well as toggle the "ENG OMMABOP TANLOV" badge.
 - [x] Toggle archive/active status.
 - [x] **Historical Price Protection**: Preserves existing members' agreed prices when plan prices are edited.
 
