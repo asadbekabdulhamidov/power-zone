@@ -33,8 +33,55 @@ export default function MembershipsPage() {
   const [description, setDescription] = useState('');
   const [durationDays, setDurationDays] = useState<number>(30);
   const [accessType, setAccessType] = useState<AccessType>('monthly_unlimited');
-  const [featuresText, setFeaturesText] = useState('Barcha trenajyorlar\nKiyinish xonasi va dush\nDispenser suvi');
+  const [addFeatures, setAddFeatures] = useState<string[]>([
+    'Barcha kardio va kuch trenajyorlari',
+    'Kiyinish xonasi va dush',
+    'Bepul ichimlik suvi dispenseridan foydalanish',
+  ]);
+  const [addPopular, setAddPopular] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Add form feature helpers
+  const handleAddFeatureChange = (index: number, val: string) => {
+    const updated = [...addFeatures];
+    updated[index] = val;
+    setAddFeatures(updated);
+  };
+
+  const handleAddFeatureAppend = () => {
+    setAddFeatures([...addFeatures, '']);
+  };
+
+  const handleAddFeatureRemove = (index: number) => {
+    if (addFeatures.length <= 1) return;
+    setAddFeatures(addFeatures.filter((_, i) => i !== index));
+  };
+
+  // Edit form feature helpers
+  const handleEditFeatureChange = (index: number, val: string) => {
+    if (!editingPlan) return;
+    const updated = [...(editingPlan.features || [])];
+    updated[index] = val;
+    setEditingPlan({ ...editingPlan, features: updated });
+  };
+
+  const handleAddEditFeature = () => {
+    if (!editingPlan) return;
+    setEditingPlan({
+      ...editingPlan,
+      features: [...(editingPlan.features || []), ''],
+    });
+  };
+
+  const handleRemoveEditFeature = (index: number) => {
+    if (!editingPlan) return;
+    const current = editingPlan.features || [];
+    if (current.length <= 1) return;
+    setEditingPlan({
+      ...editingPlan,
+      features: current.filter((_, i) => i !== index),
+    });
+  };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +96,14 @@ export default function MembershipsPage() {
       return;
     }
 
-    const features = featuresText
-      .split('\n')
+    const cleanedFeatures = addFeatures
       .map((f) => f.trim())
       .filter((f) => f.length > 0);
+
+    if (cleanedFeatures.length === 0) {
+      setFormError('Kamida bitta imkoniyat (bullet point) kiritilishi shart');
+      return;
+    }
 
     addPlan({
       name: name.trim(),
@@ -61,13 +112,20 @@ export default function MembershipsPage() {
       durationDays: Number(durationDays),
       accessType,
       status: 'active',
-      features,
+      features: cleanedFeatures,
+      popular: addPopular,
     });
 
     // Reset and close
     setName('');
     setPrice(250000);
     setDescription('');
+    setAddFeatures([
+      'Barcha kardio va kuch trenajyorlari',
+      'Kiyinish xonasi va dush',
+      'Bepul ichimlik suvi dispenseridan foydalanish',
+    ]);
+    setAddPopular(false);
     setIsAddModalOpen(false);
   };
 
@@ -75,14 +133,19 @@ export default function MembershipsPage() {
     e.preventDefault();
     if (!editingPlan) return;
 
+    const cleanedFeatures = (editingPlan.features || [])
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
+
     updatePlan(editingPlan.id, {
-      name: editingPlan.name,
+      name: editingPlan.name.trim(),
       price: Number(editingPlan.price),
-      description: editingPlan.description,
+      description: editingPlan.description.trim(),
       durationDays: Number(editingPlan.durationDays),
       accessType: editingPlan.accessType,
       status: editingPlan.status,
-      features: editingPlan.features,
+      features: cleanedFeatures.length > 0 ? cleanedFeatures : ['Barcha trenajyorlar'],
+      popular: editingPlan.popular,
     });
 
     setEditingPlan(null);
@@ -221,7 +284,12 @@ export default function MembershipsPage() {
 
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => setEditingPlan(plan)}
+                    onClick={() =>
+                      setEditingPlan({
+                        ...plan,
+                        features: plan.features ? [...plan.features] : [],
+                      })
+                    }
                     title="Tahrirlash"
                     className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
                   >
@@ -315,16 +383,71 @@ export default function MembershipsPage() {
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">
-              Tarif Imkoniyatlari (har bir satrga bittadan)
-            </label>
-            <textarea
-              rows={4}
-              value={featuresText}
-              onChange={(e) => setFeaturesText(e.target.value)}
-              className="w-full bg-[#0d131f] border border-zinc-700/80 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-500 focus:border-lime-500 focus:outline-none focus:ring-1 focus:ring-lime-500"
+          {/* BULLET POINTS (TARIF IMKONIATLARI) EDITOR */}
+          <div className="space-y-2 pt-2 border-t border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                  Tarif Imkoniyatlari (Bullet Pointlar)
+                </label>
+                <p className="text-[11px] text-zinc-400">
+                  Landing sahifasida har bir punkt yashil tasdiq belgisi bilan chiqadi.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddFeatureAppend}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-zinc-950 bg-lime-400 hover:bg-lime-300 rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Punkt qo‘shish</span>
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1 mt-2">
+              {addFeatures.map((feat, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-md bg-lime-500/15 border border-lime-500/30 text-lime-400 flex items-center justify-center shrink-0 text-[11px] font-bold">
+                    {idx + 1}
+                  </div>
+                  <input
+                    type="text"
+                    value={feat}
+                    onChange={(e) => handleAddFeatureChange(idx, e.target.value)}
+                    placeholder={`Imkoniyat ${idx + 1}...`}
+                    className="flex-1 bg-[#0d131f] border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:border-lime-500 focus:outline-none focus:ring-1 focus:ring-lime-500"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddFeatureRemove(idx)}
+                    disabled={addFeatures.length <= 1}
+                    className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
+                    title="Ushbu punktni o‘chirish"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Popular Toggle */}
+          <div className="flex items-center gap-2.5 pt-2 border-t border-zinc-800">
+            <input
+              type="checkbox"
+              id="addPlanPopular"
+              checked={addPopular}
+              onChange={(e) => setAddPopular(e.target.checked)}
+              className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-lime-500 focus:ring-lime-500 cursor-pointer"
             />
+            <label
+              htmlFor="addPlanPopular"
+              className="text-xs text-zinc-300 font-semibold cursor-pointer flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-lime-400" />
+              <span>Eng ommabop tarif deb belgilash (&ldquo;ENG OMMABOP TANLOV&rdquo; yorlig‘i)</span>
+            </label>
           </div>
 
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
@@ -412,6 +535,75 @@ export default function MembershipsPage() {
                 setEditingPlan({ ...editingPlan, description: e.target.value })
               }
             />
+
+            {/* BULLET POINTS (TARIF IMKONIATLARI) EDITOR */}
+            <div className="space-y-2 pt-2 border-t border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Tarif Imkoniyatlari (Bullet Pointlar)
+                  </label>
+                  <p className="text-[11px] text-zinc-400">
+                    Klub kartasida ko‘rinadigan barcha punktlar ro‘yxati.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddEditFeature}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-zinc-950 bg-lime-400 hover:bg-lime-300 rounded-lg shadow-sm transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Punkt qo‘shish</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1 mt-2">
+                {(editingPlan.features || []).map((feat, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-md bg-lime-500/15 border border-lime-500/30 text-lime-400 flex items-center justify-center shrink-0 text-[11px] font-bold">
+                      {idx + 1}
+                    </div>
+                    <input
+                      type="text"
+                      value={feat}
+                      onChange={(e) => handleEditFeatureChange(idx, e.target.value)}
+                      placeholder={`Imkoniyat ${idx + 1} (masalan: Barcha trenajyorlar)...`}
+                      className="flex-1 bg-[#0d131f] border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 focus:border-lime-500 focus:outline-none focus:ring-1 focus:ring-lime-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveEditFeature(idx)}
+                      disabled={(editingPlan.features || []).length <= 1}
+                      className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
+                      title="Ushbu punktni o‘chirish"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Popular Toggle */}
+            <div className="flex items-center gap-2.5 pt-2 border-t border-zinc-800">
+              <input
+                type="checkbox"
+                id="editPlanPopular"
+                checked={editingPlan.popular || false}
+                onChange={(e) =>
+                  setEditingPlan({ ...editingPlan, popular: e.target.checked })
+                }
+                className="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-lime-500 focus:ring-lime-500 cursor-pointer"
+              />
+              <label
+                htmlFor="editPlanPopular"
+                className="text-xs text-zinc-300 font-semibold cursor-pointer flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-lime-400" />
+                <span>Eng ommabop tarif deb belgilash (&ldquo;ENG OMMABOP TANLOV&rdquo; yorlig‘i)</span>
+              </label>
+            </div>
 
             <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-800/40 text-amber-300 text-xs">
               Eslatma: Narx o‘zgarishi mavjud a’zolarning o‘tgan kelishuvlariga ta’sir qilmaydi.
