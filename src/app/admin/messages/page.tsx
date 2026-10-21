@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import {
   MessageSquare,
   Search,
@@ -13,6 +14,7 @@ import {
   Mail,
   Send,
   Sparkles,
+  UserPlus,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -232,7 +234,14 @@ export default function AdminMessagesPage() {
                         </Badge>
 
                         {msg.subject && (
-                          <span className="text-xs text-zinc-400 font-medium px-2 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                          <span
+                            className={`text-xs px-2.5 py-0.5 rounded-lg border font-medium ${
+                              msg.subject.toLowerCase().includes('a’zolik') ||
+                              msg.subject.toLowerCase().includes('azolik')
+                                ? 'bg-lime-500/15 text-lime-400 border-lime-500/30 font-bold'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                            }`}
+                          >
                             {msg.subject}
                           </span>
                         )}
@@ -286,6 +295,18 @@ export default function AdminMessagesPage() {
 
                     {/* Right: Actions */}
                     <div className="flex items-center md:flex-col gap-2 shrink-0 border-t md:border-t-0 md:border-l border-zinc-800 pt-3 md:pt-0 md:pl-4">
+                      {(msg.subject?.toLowerCase().includes('a’zolik') ||
+                        msg.subject?.toLowerCase().includes('azolik')) && (
+                        <Link
+                          href="/admin/members"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-zinc-950 text-xs font-bold transition-all shadow-md shadow-lime-500/20 w-full"
+                          title="Mijoz kelganida a’zolar ro‘yxatiga kiritish va to‘lov olish"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>A’zo qilish</span>
+                        </Link>
+                      )}
+
                       {isNew ? (
                         <Button
                           variant="secondary"

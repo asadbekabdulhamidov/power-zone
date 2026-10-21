@@ -18,7 +18,7 @@ All listed features below have been inspected in code and verified via a clean p
   - *Haftasiga 3 kun* — 200,000 UZS
   - *Oylik cheklanmagan* — 300,000 UZS
   - *Bir martalik mashg‘ulot* — 20,000 UZS
-- [x] **Interactive Join Modal (`JoinModal`)**: Visitors can submit a membership request, which immediately populates into the member management list.
+- [x] **Interactive Join Modal (`JoinModal`)**: Visitors submit a membership application from the public pricing section. Instead of falsely marking them as paid active members, the request is sent to the admin inquiries inbox (`/admin/messages`) with an unread badge. The visitor receives an immediate success notification instructing them to visit the gym reception ("Zalga kelganingizda qabulxona (admin)ga murojaat qiling va to‘lovni amalga oshiring").
 - [x] **Products Showcase (Fitness Bar)**: Filters and displays active products only (`isActive: true`).
 - [x] **Location & Map Section**: Realistic Tashkent address (Amir Temur shox ko‘chasi, Bodomzor metro), operating hours, parking info, and styled dark map placeholder with navigation links.
 - [x] **Footer**: Comprehensive navigation, copyright, social links, and visible Admin Login card.
