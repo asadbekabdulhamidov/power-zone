@@ -55,6 +55,7 @@ All listed features below have been inspected in code and verified via a clean p
   - `api.auth.logout`: Purges `localStorage`, expires cookies, and cleanly resets router session.
   - Sidebar "Tizimdan chiqish" wired to execute full logout lifecycle.
   - Unsafe client-side mock login bypass removed: strictly validates credentials via live NestJS backend.
+  - Eliminated legacy entity duplication to `localStorage` (`fitnesflow_members`, `fitnesflow_payments`, `fitnesflow_plans`, etc.): PostgreSQL database on Neon.tech is now the sole single source of truth; browser storage only retains `powerzone_token`.
 
 ### C. Admin Login (`/admin/login`)
 - [x] Email/Username and Password fields with show/hide toggle.

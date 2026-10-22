@@ -118,64 +118,18 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize from localStorage if present (client-side only)
+  // Clean up legacy localStorage mock data on startup so PostgreSQL database is the single source of truth
   useEffect(() => {
     try {
-      const savedMembers = localStorage.getItem('fitnesflow_members');
-      const savedPlans = localStorage.getItem('fitnesflow_plans');
-      const savedPayments = localStorage.getItem('fitnesflow_payments');
-      const savedProducts = localStorage.getItem('fitnesflow_products');
-      const savedAdmin = localStorage.getItem('powerzone_admin_profile');
-      const savedContent = localStorage.getItem('powerzone_website_content');
-      const savedMessages = localStorage.getItem('powerzone_contact_messages');
-
-      if (savedMembers) {
-        try {
-          const parsedMembers: Member[] = JSON.parse(savedMembers);
-          // Auto-heal members whose expiryDate was accidentally doubled
-          const healed = parsedMembers.map((m) => {
-            if (m.startDate === '2026-10-21' && m.paidMonths === 2 && m.expiryDate === '2027-02-18') {
-              return { ...m, expiryDate: '2026-12-20' };
-            }
-            return m;
-          });
-          setMembers(healed);
-        } catch {
-          setMembers(INITIAL_MEMBERS);
-        }
-      }
-      if (savedPlans) setPlans(JSON.parse(savedPlans));
-      if (savedPayments) setPayments(JSON.parse(savedPayments));
-      if (savedProducts) {
-        try {
-          const parsedProducts: Product[] = JSON.parse(savedProducts);
-          // Purge legacy static mock products (prod-001..prod-009, HydraLife, etc.)
-          const hasLegacyMock = parsedProducts.some(
-            (p) =>
-              p.id.startsWith('prod-') ||
-              p.name?.includes('HydraLife') ||
-              p.name?.includes('Optimum Nutrition') ||
-              p.name?.includes('Red Bull Energy')
-          );
-          if (hasLegacyMock) {
-            try {
-              localStorage.removeItem('fitnesflow_products');
-            } catch {
-              // ignore
-            }
-            setProducts(INITIAL_PRODUCTS);
-          } else {
-            setProducts(parsedProducts);
-          }
-        } catch {
-          setProducts(INITIAL_PRODUCTS);
-        }
-      }
-      if (savedAdmin) setAdminProfile(JSON.parse(savedAdmin));
-      if (savedContent) setWebsiteContent(JSON.parse(savedContent));
-      if (savedMessages) setContactMessages(JSON.parse(savedMessages));
+      localStorage.removeItem('fitnesflow_members');
+      localStorage.removeItem('fitnesflow_plans');
+      localStorage.removeItem('fitnesflow_payments');
+      localStorage.removeItem('fitnesflow_products');
+      localStorage.removeItem('powerzone_admin_profile');
+      localStorage.removeItem('powerzone_website_content');
+      localStorage.removeItem('powerzone_contact_messages');
     } catch {
-      // LocalStorage access might fail in private windows or restrictions
+      // Ignore storage errors in private browsing modes
     } finally {
       setIsInitialized(true);
     }
@@ -201,11 +155,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           const apiProducts = await api.products.getAll(true);
           if (Array.isArray(apiProducts) && apiProducts.length > 0) {
             setProducts(apiProducts);
-            try {
-              localStorage.setItem('fitnesflow_products', JSON.stringify(apiProducts));
-            } catch {
-              // ignore
-            }
           }
         } catch {
           // Fallback to local
@@ -290,20 +239,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
 
-  // Save to localStorage when updated
-  useEffect(() => {
-    if (!isInitialized) return;
-    try {
-      localStorage.setItem('fitnesflow_members', JSON.stringify(members));
-      localStorage.setItem('fitnesflow_plans', JSON.stringify(plans));
-      localStorage.setItem('fitnesflow_payments', JSON.stringify(payments));
-      localStorage.setItem('fitnesflow_products', JSON.stringify(products));
-      localStorage.setItem('powerzone_website_content', JSON.stringify(websiteContent));
-      localStorage.setItem('powerzone_contact_messages', JSON.stringify(contactMessages));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [members, plans, payments, products, websiteContent, contactMessages, isInitialized]);
+
 
   // Toast feedback system
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -1028,11 +964,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       const apiProducts = await api.products.getAll(true);
       if (Array.isArray(apiProducts) && apiProducts.length > 0) {
         setProducts(apiProducts);
-        try {
-          localStorage.setItem('fitnesflow_products', JSON.stringify(apiProducts));
-        } catch {
-          // ignore
-        }
         showToast('Mahsulotlar serverdan yangilandi!', 'success');
         return;
       }
@@ -1040,11 +971,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       // server unreachable, use INITIAL_PRODUCTS
     }
     setProducts(INITIAL_PRODUCTS);
-    try {
-      localStorage.setItem('fitnesflow_products', JSON.stringify(INITIAL_PRODUCTS));
-    } catch {
-      // ignore
-    }
     showToast('Barcha mahsulotlar va rasmlar yangilandi!', 'success');
   };
 
@@ -1059,11 +985,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
     const updated = { ...adminProfile, password: newPass };
     setAdminProfile(updated);
-    try {
-      localStorage.setItem('powerzone_admin_profile', JSON.stringify(updated));
-    } catch {
-      // Ignore
-    }
 
     (async () => {
       try {
@@ -1084,11 +1005,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const updateAdminProfile = (data: Partial<AdminProfile>) => {
     const updated = { ...adminProfile, ...data };
     setAdminProfile(updated);
-    try {
-      localStorage.setItem('powerzone_admin_profile', JSON.stringify(updated));
-    } catch {
-      // Ignore
-    }
 
     (async () => {
       try {
