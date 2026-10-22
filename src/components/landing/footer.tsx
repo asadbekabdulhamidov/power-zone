@@ -123,7 +123,7 @@ export function LandingFooter() {
                 Klub egalari va ma’murlar uchun boshqaruv tizimi.
               </p>
               <Link
-                href="/admin/login"
+                href="/admin"
                 className="inline-flex items-center justify-between w-full px-3 py-2 rounded-xl bg-lime-500 hover:bg-lime-400 text-zinc-950 font-bold text-xs transition-colors shadow-sm"
               >
                 <span>Tizimga kirish</span>
@@ -139,7 +139,7 @@ export function LandingFooter() {
           <div className="flex items-center gap-6">
             <span className="hover:text-zinc-400 cursor-pointer">Maxfiylik siyosati</span>
             <span className="hover:text-zinc-400 cursor-pointer">Foydalanish qoidalari</span>
-            <Link href="/admin/login" className="text-lime-400/80 hover:text-lime-300 font-semibold">
+            <Link href="/admin" className="text-lime-400/80 hover:text-lime-300 font-semibold">
               Admin Login
             </Link>
           </div>

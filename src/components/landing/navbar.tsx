@@ -50,7 +50,7 @@ export function LandingNavbar() {
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/admin/login"
+            href="/admin"
             className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/60 flex items-center gap-1.5"
           >
             <Shield className="w-3.5 h-3.5 text-lime-400" />
@@ -68,7 +68,7 @@ export function LandingNavbar() {
         {/* Mobile Hamburger */}
         <div className="flex md:hidden items-center gap-2">
           <Link
-            href="/admin/login"
+            href="/admin"
             className="text-xs text-lime-400 p-2 rounded-lg bg-zinc-900 border border-zinc-800"
           >
             <Shield className="w-4 h-4" />
@@ -101,7 +101,7 @@ export function LandingNavbar() {
 
           <div className="pt-4 border-t border-zinc-800/80 flex flex-col gap-3">
             <Link
-              href="/admin/login"
+              href="/admin"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-semibold text-zinc-300"
             >

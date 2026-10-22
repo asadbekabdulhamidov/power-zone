@@ -50,13 +50,17 @@ All listed features below have been inspected in code and verified via a clean p
 
 ### B. Admin Route Guard & Authentication Protection (`src/middleware.ts` + `AdminLayout`)
 - [x] **Next.js Edge Middleware Protection (`src/middleware.ts`)**:
-  - Intercepts all `/admin/*` routes at the server/edge level.
+  - Intercepts all `/admin` and `/admin/*` routes at the server/edge level.
   - Automatically redirects unauthorized visitors without cookie tokens to `/admin/login?returnUrl=...`.
-  - Automatically redirects authenticated users away from `/admin/login` to `/admin`.
+  - Automatically redirects authenticated users away from `/admin/login` directly to `/admin`.
+  - Validates minimum token length (> 20 chars) to prevent empty or corrupted cookie bypass.
 - [x] **Client-Side Security Guard (`src/app/admin/layout.tsx`)**:
   - Real-time token validation via `api.auth.getProfile()` on initial load.
   - Dark high-tech loading screen ("Xavfsizlik tekshiruvi...") prevents any flash of dashboard content to unauthorized users.
-  - Invalid or expired tokens trigger automatic logout and redirection to `/admin/login?reason=session_expired`.
+  - Invalid or expired tokens trigger automatic logout, cookie purge, and redirection to `/admin/login?reason=session_expired`.
+  - Network error handling with user-friendly retry and login return actions.
+- [x] **Smart Navbar & Footer Routing**:
+  - Public links in navbar and footer point directly to `/admin`, which are protected by the Edge guard to smoothly navigate authenticated admins to the dashboard and redirect unauthenticated guests to `/admin/login`.
 - [x] **Secure Session Lifecycle & Token Management**:
   - `api.auth.login`: Simultaneously sets `localStorage` token and Http/SameSite cookies (7-day validity).
   - `api.auth.logout`: Purges `localStorage`, expires cookies, and cleanly resets router session.
