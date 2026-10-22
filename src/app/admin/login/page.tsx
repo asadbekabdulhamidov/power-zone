@@ -42,12 +42,11 @@ export default function AdminLoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      login: 'admin@fitnesflow.uz',
+      login: '',
       password: '',
       rememberMe: true,
     },
@@ -100,12 +99,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleFillDemo = () => {
-    setValue('login', 'admin@fitnesflow.uz');
-    setValue('password', 'fitnes2026!');
-    setValue('rememberMe', true);
-  };
-
   return (
     <div className="min-h-screen bg-[#090D16] flex flex-col justify-center items-center p-4 relative overflow-hidden">
       {/* Background ambient lighting */}
@@ -145,18 +138,11 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {/* Security badge and demo helper */}
+        {/* Security badge */}
         <div className="mb-6 p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 flex items-start gap-3 backdrop-blur-md">
           <ShieldAlert className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span className="font-semibold text-white">Xavfsiz Tizim:</span> Admin qismi PostgreSQL va JWT Bearer token bilan himoyalangan. Tizimga kirish uchun maxsus administrator hisob ma’lumotlari talab qilinadi.
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="mt-1.5 block text-lime-400 hover:underline font-bold text-[11px] cursor-pointer"
-            >
-              Standart admin hisobini to‘ldirish (admin / fitnes2026!)
-            </button>
+          <div className="flex-1 leading-relaxed">
+            <span className="font-semibold text-white">Xavfsiz Tizim:</span> Ushbu bo‘lim faqat klub ma’murlari uchun mo‘ljallangan. Tizimga kirish uchun maxsus login va parol talab qilinadi.
           </div>
         </div>
 

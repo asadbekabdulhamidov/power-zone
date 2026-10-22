@@ -58,11 +58,13 @@ export default function AdminLayout({
   // Login sahifasi uchun hech qanday layout va guard qo'llanilmaydi
   const isLoginPage = pathname === '/admin/login';
 
-  // Dastlabki holat: login sahifasida doimo true, qolganlarida token borligiga qarab
+  // Dastlabki holat: login sahifasida doimo true, qolganlarida faqat token borligiga qarab
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
     if (pathname === '/admin/login') return true;
-    return Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+    if (typeof window !== 'undefined') {
+      return Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+    }
+    return false; // Maxfiy admin sahifalarida serverda doimo false (begonalar ko'rmasligi uchun)
   });
 
   useEffect(() => {
