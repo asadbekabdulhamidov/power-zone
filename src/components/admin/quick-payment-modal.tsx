@@ -31,6 +31,7 @@ export function QuickPaymentModal({
   const [selectedMemberId, setSelectedMemberId] = useState(preselectedMemberId || '');
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [monthsCount, setMonthsCount] = useState<number>(1);
+  const [discountAmount, setDiscountAmount] = useState<number | ''>(0);
   const [amount, setAmount] = useState<number | ''>(300000);
   const [includeOldDebt, setIncludeOldDebt] = useState<boolean>(true);
   const [paymentDate, setPaymentDate] = useState<string>(
@@ -64,10 +65,20 @@ export function QuickPaymentModal({
     return currentPlan.price;
   }, [currentPlan, currentMember]);
 
-  // Plan total for chosen months
-  const planTotal = useMemo(() => {
+  // Subtotal for chosen months before discount
+  const subtotal = useMemo(() => {
     return isSingleVisit ? monthlyRate : monthlyRate * monthsCount;
   }, [isSingleVisit, monthlyRate, monthsCount]);
+
+  const effectiveDiscount = useMemo(() => {
+    const d = discountAmount === '' ? 0 : Number(discountAmount);
+    return Math.max(0, Math.min(subtotal, d));
+  }, [discountAmount, subtotal]);
+
+  // Plan total for chosen months after discount
+  const planTotal = useMemo(() => {
+    return Math.max(0, subtotal - effectiveDiscount);
+  }, [subtotal, effectiveDiscount]);
 
   // Existing debt
   const existingDebt = currentMember?.debtAmount || 0;
@@ -204,7 +215,9 @@ export function QuickPaymentModal({
         notes:
           notes.trim() ||
           (remainingDebt > 0
-            ? `Qisman to‘lov (${monthsCount} oy). Qarz: ${formatUZS(remainingDebt)}`
+            ? `Qisman to‘lov (${monthsCount} oy). Qarz: ${formatUZS(remainingDebt)}${effectiveDiscount > 0 ? ` (Chegirma: ${formatUZS(effectiveDiscount)})` : ''}`
+            : effectiveDiscount > 0
+            ? `${monthsCount} oylik to‘lov (Chegirma: -${formatUZS(effectiveDiscount)})`
             : `${monthsCount} oylik to‘liq to‘lov`),
         customExpiryDate: projectedExpiryDate,
       });
@@ -327,6 +340,57 @@ export function QuickPaymentModal({
           </div>
         )}
 
+        {/* DISCOUNT INPUT */}
+        <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-zinc-300">
+              Chegirma Berish (ixtiyoriy)
+            </label>
+            {effectiveDiscount > 0 && (
+              <span className="text-xs font-bold text-lime-400">
+                🎉 Chegirma: -{formatUZS(effectiveDiscount)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <Input
+                type="number"
+                placeholder="Chegirma summasi (UZS)"
+                value={discountAmount}
+                onChange={(e) => {
+                  const val = parseNumericInput(e.target.value);
+                  setDiscountAmount(val);
+                  const d = val === '' ? 0 : Number(val);
+                  const newPlanTotal = Math.max(0, subtotal - d);
+                  const newTotal = newPlanTotal + (includeOldDebt ? existingDebt : 0);
+                  setAmount(newTotal);
+                }}
+                min={0}
+                step={5000}
+                helperText={
+                  effectiveDiscount > 0
+                    ? `Mijozga ${formatUZS(effectiveDiscount)} chegirma berildi.`
+                    : 'Chegirma berilsa, qarz hisoblanmaydi.'
+                }
+              />
+            </div>
+            {effectiveDiscount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscountAmount(0);
+                  const newTotal = subtotal + (includeOldDebt ? existingDebt : 0);
+                  setAmount(newTotal);
+                }}
+                className="text-xs text-zinc-400 hover:text-rose-400 underline whitespace-nowrap mb-4 cursor-pointer"
+              >
+                Chegirmani bekor qilish
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* BILLING BREAKDOWN CARD */}
         <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs space-y-1.5">
           <div className="flex justify-between text-zinc-400">
@@ -340,8 +404,15 @@ export function QuickPaymentModal({
             <div className="flex justify-between text-zinc-400">
               <span>Tanlangan muddat:</span>
               <span className="text-zinc-200 font-medium">
-                {monthsCount} oylik to‘lov ({monthsCount * 30} kun)
+                {monthsCount} oylik to‘lov ({monthsCount * 30} kun) = {formatUZS(subtotal)}
               </span>
+            </div>
+          )}
+
+          {effectiveDiscount > 0 && (
+            <div className="flex justify-between text-lime-400 font-medium">
+              <span>Berilgan chegirma:</span>
+              <span className="font-bold">-{formatUZS(effectiveDiscount)}</span>
             </div>
           )}
 

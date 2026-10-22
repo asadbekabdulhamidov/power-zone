@@ -361,6 +361,11 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       return { success: false, message: "Abonement muddati tugagan." };
     }
 
+    if (member.status === 'frozen') {
+      showToast(`Abonement muzlatilgan! Avval a’zo statusini "Faol" holatiga o‘tkazing.`, 'error');
+      return { success: false, message: "Abonement muzlatilgan." };
+    }
+
     if (member.accessType === 'weekly_3_days' && member.visitsThisWeek >= 3) {
       showToast(`Haftalik limit (3/3) to'lgan! Keyingi haftagacha tashrif cheklangan.`, 'error');
       return {

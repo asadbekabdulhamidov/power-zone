@@ -83,6 +83,7 @@ export default function MembersPage() {
   const [formInstagram, setFormInstagram] = useState('');
   const [formPhoto, setFormPhoto] = useState<string | null>(null);
   const [formPlanId, setFormPlanId] = useState(plans[0]?.id || '');
+  const [formPriceAgreed, setFormPriceAgreed] = useState<number | '' | null>(null);
   const [formMonthsCount, setFormMonthsCount] = useState<number>(1);
   const [formPaidAmount, setFormPaidAmount] = useState<number | '' | null>(null);
   const [formPaymentMethod, setFormPaymentMethod] = useState<PaymentMethod>('cash');
@@ -117,6 +118,7 @@ export default function MembersPage() {
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [editDebtAmount, setEditDebtAmount] = useState<number | ''>(0);
   const [editNotes, setEditNotes] = useState('');
+  const [editFormError, setEditFormError] = useState<string | null>(null);
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -326,6 +328,7 @@ export default function MembersPage() {
     setIsAddModalOpen(false);
     setFormPhoto(null);
     setCameraError(null);
+    setFormPriceAgreed(null);
   };
 
   const handleOpenEditModal = (member: Member) => {
@@ -349,6 +352,7 @@ export default function MembersPage() {
     setEditDebtAmount(member.debtAmount || 0);
     setEditNotes(member.notes || '');
     setEditCameraError(null);
+    setEditFormError(null);
     setIsEditCameraActive(false);
   };
 
@@ -356,16 +360,22 @@ export default function MembersPage() {
     stopCamera(true);
     setEditingMember(null);
     setEditCameraError(null);
+    setEditFormError(null);
   };
 
   // Filtered members
   const filteredMembers = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const digitsOnly = searchQuery.replace(/\D/g, '');
+
     return members.filter((m) => {
       const matchSearch =
-        m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.phone.includes(searchQuery) ||
-        (m.telegramUsername && m.telegramUsername.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (m.instagramUsername && m.instagramUsername.toLowerCase().includes(searchQuery.toLowerCase()));
+        !q ||
+        m.fullName.toLowerCase().includes(q) ||
+        m.phone.toLowerCase().includes(q) ||
+        (digitsOnly && m.phone.replace(/\D/g, '').includes(digitsOnly)) ||
+        (m.telegramUsername && m.telegramUsername.toLowerCase().includes(q)) ||
+        (m.instagramUsername && m.instagramUsername.toLowerCase().includes(q));
 
       const matchStatus =
         statusFilter === 'all'
@@ -404,7 +414,11 @@ export default function MembersPage() {
     expiryDateObj.setDate(startDateObj.getDate() + duration * months);
     const expiryDateStr = expiryDateObj.toISOString().split('T')[0];
 
-    const planTotal = selectedPlan.price * months;
+    const agreedUnitPrice =
+      formPriceAgreed !== null && formPriceAgreed !== ''
+        ? Number(formPriceAgreed)
+        : selectedPlan.price;
+    const planTotal = agreedUnitPrice * months;
     const actualPaid =
       formPaidAmount !== null
         ? formPaidAmount === ''
@@ -439,7 +453,7 @@ export default function MembersPage() {
       instagramUsername: cleanInstagram,
       membershipPlanId: selectedPlan.id,
       membershipPlanName: selectedPlan.name,
-      membershipPriceAgreed: selectedPlan.price,
+      membershipPriceAgreed: agreedUnitPrice,
       debtAmount: initialDebt,
       paidMonths: months,
       accessType: selectedPlan.accessType,
@@ -469,6 +483,8 @@ export default function MembersPage() {
         notes:
           initialDebt > 0
             ? `Ro‘yxatdan o‘tishda qisman to‘lov (${months} oy). Qarz: ${formatUZS(initialDebt)}`
+            : agreedUnitPrice < selectedPlan.price
+            ? `Ro‘yxatdan o‘tishda chegirmali narxda (${formatUZS(agreedUnitPrice)}/oy) to‘liq to‘lov (${months} oy)`
             : `Ro‘yxatdan o‘tishda to‘liq to‘lov (${months} oy)`,
         customExpiryDate: expiryDateStr,
       });
@@ -480,7 +496,17 @@ export default function MembersPage() {
   // Handle Edit Member Submission
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setEditFormError(null);
     if (!editingMember) return;
+
+    if (!editFullName.trim() || editFullName.trim().length < 3) {
+      setEditFormError('Ism-familiya kamida 3 ta harfdan iborat bo‘lishi kerak');
+      return;
+    }
+    if (!editPhone || editPhone.trim().length < 9) {
+      setEditFormError('To‘g‘ri telefon raqamini kiriting');
+      return;
+    }
 
     const cleanTelegram = editTelegram.trim()
       ? editTelegram.trim().startsWith('@')
@@ -1080,6 +1106,7 @@ export default function MembersPage() {
                 setFormPlanId(newPlanId);
                 const p = plans.find((item) => item.id === newPlanId);
                 if (p) {
+                  setFormPriceAgreed(p.price);
                   const months = p.accessType === 'single_visit' ? 1 : formMonthsCount;
                   setFormPaidAmount(p.price * months);
                 }
@@ -1095,12 +1122,87 @@ export default function MembersPage() {
             />
           </div>
 
+          {/* CUSTOM PRICE / DISCOUNT FIELD */}
+          {(() => {
+            const currentPlan = plans.find((p) => p.id === formPlanId) || plans[0];
+            const isSingle = currentPlan?.accessType === 'single_visit';
+            const agreedMonthly =
+              formPriceAgreed !== null && formPriceAgreed !== ''
+                ? Number(formPriceAgreed)
+                : currentPlan?.price || 200000;
+            const hasDiscount = agreedMonthly < (currentPlan?.price || 200000);
+            const discountPerMonth = (currentPlan?.price || 200000) - agreedMonthly;
+
+            return (
+              <div className="p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                  <span className="font-semibold text-zinc-300">
+                    Oylik Narx va Chegirma (Mijoz bilan kelishilgan narx)
+                  </span>
+                  {hasDiscount && (
+                    <span className="text-lime-400 font-bold bg-lime-950/60 border border-lime-500/30 px-2 py-0.5 rounded-full text-[11px]">
+                      🎉 Chegirma: {formatUZS(discountPerMonth)}/oy arzonroq
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <Input
+                    label="Kelishilgan Oylik Narx (UZS)"
+                    type="number"
+                    min={0}
+                    step={5000}
+                    value={formPriceAgreed !== null ? formPriceAgreed : currentPlan?.price || 200000}
+                    onChange={(e) => {
+                      const val = parseNumericInput(e.target.value);
+                      setFormPriceAgreed(val);
+                      const unitP = val === '' ? 0 : Number(val);
+                      const months = isSingle ? 1 : formMonthsCount;
+                      setFormPaidAmount(unitP * months);
+                    }}
+                    helperText={`Standart tarif narxi: ${formatUZS(currentPlan?.price || 200000)}`}
+                  />
+
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormPriceAgreed(currentPlan?.price || 200000);
+                        const months = isSingle ? 1 : formMonthsCount;
+                        setFormPaidAmount((currentPlan?.price || 200000) * months);
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                    >
+                      Standart narx
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const disc = Math.max(0, (currentPlan?.price || 200000) - 50000);
+                        setFormPriceAgreed(disc);
+                        const months = isSingle ? 1 : formMonthsCount;
+                        setFormPaidAmount(disc * months);
+                      }}
+                      className="text-[11px] px-2.5 py-1 rounded-lg bg-lime-950/80 border border-lime-500/40 hover:bg-lime-900 text-lime-400 font-medium transition-colors"
+                    >
+                      -50,000 UZS chegirma
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* DURATION (MONTHS) SELECTION IN ADD MODAL */}
           {(() => {
             const currentPlan = plans.find((p) => p.id === formPlanId) || plans[0];
             const isSingle = currentPlan?.accessType === 'single_visit';
             const months = isSingle ? 1 : formMonthsCount;
-            const totalRequired = (currentPlan?.price || 200000) * months;
+            const agreedMonthly =
+              formPriceAgreed !== null && formPriceAgreed !== ''
+                ? Number(formPriceAgreed)
+                : currentPlan?.price || 200000;
+            const totalRequired = agreedMonthly * months;
             const actualPaid = formPaidAmount !== null ? formPaidAmount : totalRequired;
             const numPaid = actualPaid === '' ? 0 : Number(actualPaid);
             const debt = Math.max(0, totalRequired - numPaid);
@@ -1125,7 +1227,7 @@ export default function MembersPage() {
                           type="button"
                           onClick={() => {
                             setFormMonthsCount(m);
-                            setFormPaidAmount((currentPlan?.price || 200000) * m);
+                            setFormPaidAmount(agreedMonthly * m);
                           }}
                           className={`py-1.5 px-2 text-xs font-semibold rounded-xl border transition-all text-center cursor-pointer ${
                             formMonthsCount === m
@@ -1238,6 +1340,11 @@ export default function MembersPage() {
           maxWidth="lg"
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
+            {editFormError && (
+              <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold">
+                {editFormError}
+              </div>
+            )}
             {/* Edit Photo Area */}
             <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">

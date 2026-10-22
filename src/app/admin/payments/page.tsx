@@ -105,11 +105,16 @@ export default function PaymentsPage() {
 
   // Filtered payments
   const filteredPayments = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const digitsOnly = searchQuery.replace(/\D/g, '');
+
     return payments.filter((p) => {
       const matchSearch =
-        p.memberName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.memberPhone.includes(searchQuery) ||
-        p.receiptNumber.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        p.memberName.toLowerCase().includes(q) ||
+        p.memberPhone.toLowerCase().includes(q) ||
+        (digitsOnly && p.memberPhone.replace(/\D/g, '').includes(digitsOnly)) ||
+        p.receiptNumber.toLowerCase().includes(q);
 
       const matchMethod = methodFilter === 'all' || p.paymentMethod === methodFilter;
 

@@ -53,12 +53,17 @@ export default function AdminMessagesPage() {
 
   // Filtered messages
   const filteredMessages = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const digitsOnly = searchQuery.replace(/\D/g, '');
+
     return contactMessages.filter((m) => {
       const matchSearch =
-        m.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (m.subject && m.subject.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        m.message.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        m.fullName.toLowerCase().includes(q) ||
+        m.phone.toLowerCase().includes(q) ||
+        (digitsOnly && m.phone.replace(/\D/g, '').includes(digitsOnly)) ||
+        (m.subject && m.subject.toLowerCase().includes(q)) ||
+        m.message.toLowerCase().includes(q);
 
       const matchStatus = statusFilter === 'all' || m.status === statusFilter;
 

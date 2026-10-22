@@ -392,20 +392,34 @@ export default function ProductsPage() {
     e.preventDefault();
     if (!editingProduct) return;
 
+    if (!editingProduct.name.trim()) {
+      setEditCameraError('Mahsulot nomi kiritilishi shart');
+      return;
+    }
+
+    const finalPrice = editPrice === '' ? 0 : Number(editPrice);
+    if (finalPrice <= 0) {
+      setEditCameraError('Mahsulot narxi 0 dan katta bo‘lishi shart');
+      return;
+    }
+
+    const finalStock = editStock === '' ? 0 : Number(editStock);
+    if (finalStock < 0) {
+      setEditCameraError('Qoldiq soni manfiy bo‘lishi mumkin emas');
+      return;
+    }
+
     const finalImg =
       editingProduct.imageUrl.trim() ||
       CATEGORY_DEFAULT_IMAGES[editingProduct.category] ||
       CATEGORY_DEFAULT_IMAGES.water;
 
-    const finalPrice = editPrice === '' ? 0 : Number(editPrice);
-    const finalStock = editStock === '' ? 0 : Number(editStock);
-
     updateProduct(editingProduct.id, {
-      name: editingProduct.name,
+      name: editingProduct.name.trim(),
       category: editingProduct.category,
       categoryLabel: categoryLabels[editingProduct.category],
       imageUrl: finalImg,
-      description: editingProduct.description,
+      description: editingProduct.description.trim(),
       price: finalPrice,
       stockQuantity: finalStock,
       isActive: editingProduct.isActive,

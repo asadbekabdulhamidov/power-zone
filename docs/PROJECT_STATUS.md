@@ -49,6 +49,9 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Weekly 3-Day Attendance Enforcer**: Tracks and displays visits this week (`X/3 kun`). Includes check-in button that blocks visits once 3/3 is reached.
 - [x] **Add Member Modal**: Full form with name, phone, photo (camera/upload), telegram, instagram, duration (months), initial payment, partial debt calculation, and plan selection.
 - [x] **Comprehensive Member Rectification & Edit Modal**: Administrators can rectify any errors made during admission, including Full Name, Phone, Gender, Age, Photo, Telegram, Instagram, Membership Plan (`membershipPlanId`), custom agreed price (`membershipPriceAgreed`), Start Date (`startDate`), Duration (`paidMonths` pills: 1, 2, 3, 6, 12 months with automatic expiry calculation), Expiration Date (`expiryDate`), Status, Debt Amount, and Notes. Includes a direct "Bog‘langan To‘lovlar" section with 1-click payment editing.
+- [x] **Agreed Pricing & Discount Engine ("Chegirma")**: Supports custom agreed monthly rates and one-click discounts (e.g. -50,000 UZS) at admission and in `QuickPaymentModal` without triggering false debt.
+- [x] **Attendance Rules & Frozen Enforcement**: Blocks check-ins if 3 visits/week limit is reached, if membership is expired, or if status is frozen ("Abonement muzlatilgan").
+- [x] **Resilient Search & Phone Matching**: Normalizes phone searches across formats (e.g. `901234567` successfully finds `+998 90 123 45 67`).
 - [x] **Member Detail View**: Slide-out/modal view showing complete profile, debt warning banner, direct "Ma’lumotlarni Tahrirlash" action, quick debt repayment action, visit metrics, social outreach links, and isolated payment history table with per-payment Edit and Delete actions.
 - [x] Delete member action with confirmation dialog.
 

@@ -23,7 +23,7 @@ import { formatUZS, parseNumericInput } from '@/lib/utils';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function MembershipsPage() {
-  const { plans, members, addPlan, updatePlan, deletePlan, togglePlanStatus } = useFitnesFlow();
+  const { plans, members, addPlan, updatePlan, deletePlan, togglePlanStatus, showToast } = useFitnesFlow();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
@@ -149,12 +149,26 @@ export default function MembershipsPage() {
     e.preventDefault();
     if (!editingPlan) return;
 
-    const cleanedFeatures = (editingPlan.features || [])
-      .map((f) => f.trim())
-      .filter((f) => f.length > 0);
+    if (!editingPlan.name.trim()) {
+      showToast('Tarif nomi kiritilishi shart', 'error');
+      return;
+    }
 
     const numPrice = editPrice === '' ? 0 : Number(editPrice);
     const numDuration = editDurationDays === '' ? 30 : Number(editDurationDays);
+
+    if (numPrice <= 0) {
+      showToast('Tarif narxi 0 dan katta bo‘lishi shart', 'error');
+      return;
+    }
+    if (numDuration <= 0) {
+      showToast('Muddati 0 dan katta bo‘lishi shart', 'error');
+      return;
+    }
+
+    const cleanedFeatures = (editingPlan.features || [])
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
 
     updatePlan(editingPlan.id, {
       name: editingPlan.name.trim(),
