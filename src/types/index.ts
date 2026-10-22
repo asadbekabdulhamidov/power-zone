@@ -135,6 +135,7 @@ export interface WebsiteBanner {
   title: string;
   desc: string;
   linkText: string;
+  imageUrl?: string;
 }
 
 export interface WebsiteContactInfo {

@@ -543,6 +543,7 @@ export const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
     title: 'Birinchi Mashg‘ulotda Murabbiy Maslahati Mutlaqo Bepul',
     desc: 'Yangi boshlayotgan bo‘lsangiz, tajribali murabbiyimiz trenajyorlardan to‘g‘ri foydalanishni tushuntiradi, jismoniy holatingizni baholaydi va maqsadlaringizga mos mashqlar rejasini tuzishda ko‘maklashadi.',
     linkText: 'Tariflar bilan tanishing va a’zo bo‘ling',
+    imageUrl: '/images/about/coach-training.webp',
   },
   contact: {
     phone: '+998 (90) 123-45-67',

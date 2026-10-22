@@ -73,6 +73,7 @@ export default function WebsiteAdminPage() {
   const [bannerTitle, setBannerTitle] = useState(websiteContent.banner.title);
   const [bannerDesc, setBannerDesc] = useState(websiteContent.banner.desc);
   const [bannerLinkText, setBannerLinkText] = useState(websiteContent.banner.linkText);
+  const [bannerImageUrl, setBannerImageUrl] = useState(websiteContent.banner.imageUrl || '/images/about/coach-training.webp');
 
   // Contact form state
   const [contactPhone, setContactPhone] = useState(websiteContent.contact.phone);
@@ -102,6 +103,7 @@ export default function WebsiteAdminPage() {
     setBannerTitle(websiteContent.banner.title);
     setBannerDesc(websiteContent.banner.desc);
     setBannerLinkText(websiteContent.banner.linkText);
+    setBannerImageUrl(websiteContent.banner.imageUrl || '/images/about/coach-training.webp');
     setContactPhone(websiteContent.contact.phone);
     setContactEmail(websiteContent.contact.email);
     setContactAddress(websiteContent.contact.address);
@@ -196,6 +198,7 @@ export default function WebsiteAdminPage() {
       title: bannerTitle.trim(),
       desc: bannerDesc.trim(),
       linkText: bannerLinkText.trim(),
+      imageUrl: bannerImageUrl.trim() || '/images/about/coach-training.webp',
     });
   };
 
@@ -581,6 +584,25 @@ export default function WebsiteAdminPage() {
                   placeholder="Tariflar bilan tanishing va a’zo bo‘ling"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Banner Rasmi (URL yoki lokal yo‘l)
+                </label>
+                <Input
+                  value={bannerImageUrl}
+                  onChange={(e) => setBannerImageUrl(e.target.value)}
+                  placeholder="/images/about/coach-training.webp"
+                />
+                <div className="mt-2.5 relative w-full max-w-sm h-40 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={bannerImageUrl || '/images/about/coach-training.webp'}
+                    alt="Banner preview"
+                    className="w-full h-full object-cover object-[center_30%]"
+                  />
+                </div>
               </div>
 
               <div className="pt-2">

@@ -92,12 +92,12 @@ export function LandingAbout() {
                 </div>
               </div>
 
-              <div className="relative min-h-[300px] lg:min-h-full">
+              <div className="relative min-h-[320px] lg:min-h-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1000&q=80"
-                  alt="Power Zone mashg'ulot maydoni"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  src={banner.imageUrl || '/images/about/coach-training.webp'}
+                  alt={banner.title || "Power Zone professional murabbiy va mashg'ulot"}
+                  className="absolute inset-0 w-full h-full object-cover object-[center_30%]"
                 />
               </div>
             </div>
