@@ -12,17 +12,15 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
-  RefreshCw,
   Save,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFitnesFlow } from '@/context/fitnes-context';
-import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function AdminSettingsPage() {
-  const { adminProfile, updateAdminPassword, updateAdminProfile, resetToDefault } =
+  const { adminProfile, updateAdminPassword, updateAdminProfile } =
     useFitnesFlow();
 
   // Password change form state
@@ -38,7 +36,6 @@ export default function AdminSettingsPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   // Profile edit state
   const [fullName, setFullName] = useState(adminProfile.fullName);
@@ -164,7 +161,7 @@ export default function AdminSettingsPage() {
                         {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     }
-                    helperText="Standart demo parol: power2026!"
+                    helperText="Amaldagi parolingizni kiriting"
                   />
                 </div>
 
@@ -350,43 +347,10 @@ export default function AdminSettingsPage() {
                 <span className="text-zinc-400">Ish vaqti:</span>
                 <span className="font-semibold text-zinc-200">07:00 – 23:00</span>
               </div>
-
-              <div className="pt-3 border-t border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setIsResetModalOpen(true)}
-                  className="w-full py-2 px-3 text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Dastlabki Demo Holatga Qaytarish</span>
-                </button>
-              </div>
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* Reset Confirmation Modal */}
-      {isResetModalOpen && (
-        <ConfirmDeleteModal
-          isOpen={isResetModalOpen}
-          onClose={() => setIsResetModalOpen(false)}
-          onConfirm={() => {
-            resetToDefault();
-            setFullName('Azizbek Admin');
-            setEmail('admin@powerzone.uz');
-            setPhone('+998 (90) 123-45-67');
-            setIsResetModalOpen(false);
-          }}
-          title="Dastlabki Holatga Qaytarish"
-          description="Barcha ma’lumotlarni va admin parolini boshlang‘ich holatga qaytarasizmi?"
-          itemType="Tizim Sozlamalari"
-          itemName="Power Zone Sozlamalari & Admin Paroli"
-          warningText="Bu amal barcha kiritilgan o‘zgarishlarni tozalab, tizimni dastlabki holatiga keltiradi."
-          confirmText="Ha, qaytarilsin"
-          variant="warning"
-        />
-      )}
     </div>
   );
 }

@@ -92,17 +92,14 @@ interface FitnesContextType {
   addContactMessage: (data: Omit<ContactMessage, 'id' | 'createdAt' | 'status'>) => ContactMessage;
   updateMessageStatus: (id: string, status: MessageStatus) => void;
   deleteContactMessage: (id: string) => void;
-
-  // Reset to initial mock data
-  resetToDefault: () => void;
 }
 
 const DEFAULT_ADMIN: AdminProfile = {
-  fullName: 'Azizbek Admin',
+  fullName: 'Administrator',
   email: 'admin@powerzone.uz',
   phone: '+998 (90) 123-45-67',
   role: 'Bosh Administrator',
-  password: 'power2026!',
+  password: '',
 };
 
 const FitnesContext = createContext<FitnesContextType | undefined>(undefined);
@@ -153,14 +150,24 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         // 2. Sync products from live PostgreSQL
         try {
           const apiProducts = await api.products.getAll(true);
-          if (Array.isArray(apiProducts) && apiProducts.length > 0) {
+          if (Array.isArray(apiProducts)) {
             setProducts(apiProducts);
           }
         } catch {
           // Fallback to local
         }
 
-        // 3. If admin is logged in with token, sync real members, payments, and admin profile
+        // 3. Sync website CMS content from live PostgreSQL
+        try {
+          const cmsContent = await api.website.getContent();
+          if (cmsContent && cmsContent.hero) {
+            setWebsiteContent(cmsContent);
+          }
+        } catch {
+          // Fallback to initial content
+        }
+
+        // 4. If admin is logged in with token, sync real members, payments, contact messages, and admin profile
         const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
         if (token) {
           try {
@@ -171,6 +178,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
                 fullName: me.fullName || prev.fullName,
                 email: me.email || prev.email,
                 phone: me.phone || prev.phone,
+                role: me.role === 'SUPERADMIN' ? 'Bosh Administrator' : (me.role || prev.role),
               }));
             }
           } catch {
@@ -180,40 +188,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           try {
             const membersRes = await api.members.getAll({ limit: 100 });
             if (membersRes && Array.isArray(membersRes.data)) {
-              if (membersRes.data.length > 0) {
-                setMembers(membersRes.data);
-              } else {
-                // If PostgreSQL has 0 members, but browser has locally created members (e.g. Asadbek),
-                // automatically push unsynced local members to PostgreSQL!
-                const localUnsynced = members.filter((m) => m.id.startsWith('mem-'));
-                for (const lm of localUnsynced) {
-                  try {
-                    const res = await api.members.create({
-                      fullName: lm.fullName,
-                      phone: lm.phone,
-                      gender: lm.gender || 'erkak',
-                      age: lm.age || 25,
-                      telegramUsername: lm.telegramUsername,
-                      instagramUsername: lm.instagramUsername,
-                      photoUrl: lm.photoUrl,
-                      membershipPlanId: lm.membershipPlanId,
-                      membershipPriceAgreed: lm.membershipPriceAgreed,
-                      paidMonths: lm.paidMonths || 1,
-                      paidAmount: (lm.membershipPriceAgreed * (lm.paidMonths || 1)) - (lm.debtAmount || 0),
-                      paymentMethod: 'cash',
-                      startDate: lm.startDate,
-                      notes: lm.notes,
-                    });
-                    if (res && res.member) {
-                      setMembers((prev) =>
-                        prev.map((m) => (m.id === lm.id ? { ...m, ...res.member, id: res.member.id } : m))
-                      );
-                    }
-                  } catch (pushErr) {
-                    console.error('Failed to sync offline member to server:', pushErr);
-                  }
-                }
-              }
+              setMembers(membersRes.data);
             }
           } catch {
             // Fallback to local
@@ -221,17 +196,16 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
 
           try {
             const paymentsRes = await api.payments.getAll({ limit: 100 });
-            if (paymentsRes && Array.isArray(paymentsRes.data) && paymentsRes.data.length > 0) {
+            if (paymentsRes && Array.isArray(paymentsRes.data)) {
               setPayments(paymentsRes.data);
             }
           } catch {
             // Fallback to local
           }
 
-          // 4. Sync contact messages from live PostgreSQL
           try {
             const messagesRes = await api.messages.getAll();
-            if (Array.isArray(messagesRes) && messagesRes.length > 0) {
+            if (Array.isArray(messagesRes)) {
               setContactMessages(messagesRes);
             }
           } catch {
@@ -246,7 +220,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     if (isInitialized) {
       syncFromApi();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
 
 
@@ -1164,28 +1137,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     })();
   };
 
-  const resetToDefault = () => {
-    setMembers(INITIAL_MEMBERS);
-    setPlans(INITIAL_MEMBERSHIP_PLANS);
-    setPayments(INITIAL_PAYMENTS);
-    setProducts(INITIAL_PRODUCTS);
-    setAdminProfile(DEFAULT_ADMIN);
-    setWebsiteContent(INITIAL_WEBSITE_CONTENT);
-    setContactMessages(INITIAL_CONTACT_MESSAGES);
-    try {
-      localStorage.removeItem('fitnesflow_members');
-      localStorage.removeItem('fitnesflow_plans');
-      localStorage.removeItem('fitnesflow_payments');
-      localStorage.removeItem('fitnesflow_products');
-      localStorage.removeItem('powerzone_admin_profile');
-      localStorage.removeItem('powerzone_website_content');
-      localStorage.removeItem('powerzone_contact_messages');
-    } catch {
-      // Ignore
-    }
-    showToast('Barcha ma’lumotlar dastlabki holatga qaytarildi.', 'info');
-  };
-
   return (
     <FitnesContext.Provider
       value={{
@@ -1230,7 +1181,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         addContactMessage,
         updateMessageStatus,
         deleteContactMessage,
-        resetToDefault,
       }}
     >
       {children}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AreaChart,
   Area,
@@ -10,31 +10,58 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { MOCK_REVENUE_CHART_DATA, MOCK_MONTHLY_REVENUE_DATA } from '@/lib/mock-data';
+import { api } from '@/lib/api-client';
 import { formatUZS } from '@/lib/utils';
 
 export function RevenueChart() {
   const [view, setView] = useState<'weekly' | 'monthly'>('weekly');
+  const [weeklyData, setWeeklyData] = useState<Array<{ name: string; value: number }>>([]);
+  const [monthlyData, setMonthlyData] = useState<Array<{ name: string; value: number }>>([]);
 
-  const chartData = view === 'weekly'
-    ? MOCK_REVENUE_CHART_DATA.map((item) => ({
-        name: item.day,
-        value: item.amount,
-      }))
-    : MOCK_MONTHLY_REVENUE_DATA.map((item) => ({
-        name: item.month,
-        value: item.revenue,
-      }));
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const res = await api.dashboard.getRevenueChart();
+        if (res && isMounted) {
+          if (Array.isArray(res.weekly)) {
+            setWeeklyData(
+              res.weekly.map((item) => ({
+                name: item.date.slice(5),
+                value: item.amount,
+              }))
+            );
+          }
+          if (Array.isArray(res.monthly)) {
+            setMonthlyData(
+              res.monthly.map((item) => ({
+                name: item.month,
+                value: item.amount,
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load live revenue chart:', err);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const chartData = view === 'weekly' ? weeklyData : monthlyData;
+  const totalInView = chartData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Kassaga tushumlar dinamikasi
+            Kassaga tushumlar dinamikasi (Jonli Baza)
           </span>
           <div className="text-xl font-extrabold text-white">
-            {view === 'weekly' ? 'Haftalik Tushum: ~4,680,000 UZS' : 'Oxirgi 6 oylik o‘sish'}
+            {view === 'weekly' ? `Haftalik Tushum: ${formatUZS(totalInView)}` : `Oylik Tushum: ${formatUZS(totalInView)}`}
           </div>
         </div>
 

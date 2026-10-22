@@ -54,7 +54,6 @@ export default function WebsiteAdminPage() {
     deleteWebsiteFeature,
     updateWebsiteBanner,
     updateWebsiteContact,
-    resetToDefault,
   } = useFitnesFlow();
 
   const [activeTab, setActiveTab] = useState<WebsiteTab>('hero');
@@ -91,32 +90,6 @@ export default function WebsiteAdminPage() {
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [editingFeature, setEditingFeature] = useState<WebsiteFeature | null>(null);
   const [featureToDelete, setFeatureToDelete] = useState<WebsiteFeature | null>(null);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-
-  const handleConfirmReset = () => {
-    resetToDefault();
-    setHeroBadge(websiteContent.hero.badge);
-    setHeroTitle(websiteContent.hero.title);
-    setHeroSubtitle(websiteContent.hero.subtitle);
-    setHeroBullets([...websiteContent.hero.bullets]);
-    setHeroBgImage(websiteContent.hero.backgroundImage || '/images/hero/hero-bg.webp');
-    setStatsData([...websiteContent.stats]);
-    setBannerBadge(websiteContent.banner.badge);
-    setBannerTitle(websiteContent.banner.title);
-    setBannerDesc(websiteContent.banner.desc);
-    setBannerLinkText(websiteContent.banner.linkText);
-    setBannerImageUrl(websiteContent.banner.imageUrl || '/images/about/coach-training.webp');
-    setContactPhone(websiteContent.contact.phone);
-    setContactEmail(websiteContent.contact.email);
-    setContactAddress(websiteContent.contact.address);
-    setContactLandmark(websiteContent.contact.landmark);
-    setWorkingWeekdays(websiteContent.contact.workingHoursWeekdays);
-    setWorkingSunday(websiteContent.contact.workingHoursSunday);
-    setTelegramChannel(websiteContent.contact.telegramChannel);
-    setTelegramAdmin(websiteContent.contact.telegramAdmin);
-    setInstagram(websiteContent.contact.instagram);
-    setIsResetConfirmOpen(false);
-  };
 
   const [featTitle, setFeatTitle] = useState('');
   const [featDesc, setFeatDesc] = useState('');
@@ -236,13 +209,6 @@ export default function WebsiteAdminPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsResetConfirmOpen(true)}
-            className="px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
-          >
-            Boshlang‘ichga qaytarish
-          </button>
           <Link
             href="/"
             target="_blank"
@@ -961,21 +927,6 @@ export default function WebsiteAdminPage() {
         />
       )}
 
-      {/* Reset Website Content Confirmation Modal */}
-      {isResetConfirmOpen && (
-        <ConfirmDeleteModal
-          isOpen={isResetConfirmOpen}
-          onClose={() => setIsResetConfirmOpen(false)}
-          onConfirm={handleConfirmReset}
-          title="Standart Holatga Qaytarish"
-          description="Barcha sayt matnlari va sozlamalarini zavod holatiga qaytarmoqchimisiz?"
-          itemType="Sayt Ma’lumotlari"
-          itemName="Standart Matnlar, Statistikalar & Aloqa"
-          warningText="Sayt kontentiga kiritilgan barcha o‘zgarishlar asl namunalarga tiklanadi."
-          confirmText="Ha, standartga qaytarilsin"
-          variant="warning"
-        />
-      )}
     </div>
   );
 }
