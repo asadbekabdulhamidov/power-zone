@@ -128,6 +128,7 @@ export interface WebsiteHero {
   title: string;
   subtitle: string;
   bullets: string[];
+  backgroundImage?: string;
 }
 
 export interface WebsiteBanner {

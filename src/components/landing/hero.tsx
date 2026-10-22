@@ -15,11 +15,12 @@ export function LandingHero() {
       <div className="absolute inset-0 z-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=2000&q=85"
+          src={hero.backgroundImage || '/images/hero/hero-bg.webp'}
           alt="Power Zone zamonaviy fitnes zali"
-          className="w-full h-full object-cover object-center brightness-[0.25] scale-105"
+          className="w-full h-full object-cover object-center brightness-[0.4] contrast-[1.05] scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#090d16] via-[#090d16]/75 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#090d16] via-[#090d16]/85 sm:via-[#090d16]/70 to-[#090d16]/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#090d16] via-transparent to-[#090d16]/60" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-lime-500/10 via-transparent to-transparent" />
       </div>
 

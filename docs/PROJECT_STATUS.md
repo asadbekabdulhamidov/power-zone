@@ -25,7 +25,7 @@ All listed features below have been inspected in code and verified via a clean p
 
 ### A. Public Website (`/`)
 - [x] **Responsive Navigation Bar**: Sticky frosted navigation with brand logo, section anchors (`#haqimizda`, `#galereya`, `#tariflar`, `#mahsulotlar`, `#manzil`), CTA buttons, and mobile drawer menu.
-- [x] **Hero Section**: High-impact fitness background photography, Uzbek typography, key gym statistics (1,200+ m², 60+ machines, 15+ trainers, 07:00–23:00), and CTA triggers.
+- [x] **Hero Section with Real Gym Background**: Ultra-widescreen high-resolution club photography (`/images/hero/hero-bg.webp`, 134 KB), custom dual-gradient overlay (horizontal protection for headline/CTA contrast and vertical atmosphere blend), Uzbek typography, key gym statistics (1,200+ m², 60+ machines, 15+ trainers, 07:00–23:00), and full CMS background customization in `/admin/website`.
 - [x] **About Gym Section**: Highlighted facility cards (Italian/German biomachine equipment, HEPA ventilation, certified coaches, Finnish sauna, transparent club rules).
 - [x] **Coach Training Banner ("Individual Yondashuv")**: Replaced Unsplash stock photo with the club's real coach-and-trainee photo (`/images/about/coach-training.webp` with progressive JPG fallback). Added CMS image configuration support in `/admin/website`.
 - [x] **Photo Gallery with Real Gym Photos**: Filterable photo showcase with category tags (Barchasi, Kuch zonalari, Kardio, Dush va Bar). Integrated real high-resolution club photography converted to high-performance WebP assets (`public/images/gallery/`):

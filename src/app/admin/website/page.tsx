@@ -64,6 +64,7 @@ export default function WebsiteAdminPage() {
   const [heroTitle, setHeroTitle] = useState(websiteContent.hero.title);
   const [heroSubtitle, setHeroSubtitle] = useState(websiteContent.hero.subtitle);
   const [heroBullets, setHeroBullets] = useState<string[]>([...websiteContent.hero.bullets]);
+  const [heroBgImage, setHeroBgImage] = useState(websiteContent.hero.backgroundImage || '/images/hero/hero-bg.webp');
 
   // Stats form state
   const [statsData, setStatsData] = useState<WebsiteStat[]>([...websiteContent.stats]);
@@ -98,6 +99,7 @@ export default function WebsiteAdminPage() {
     setHeroTitle(websiteContent.hero.title);
     setHeroSubtitle(websiteContent.hero.subtitle);
     setHeroBullets([...websiteContent.hero.bullets]);
+    setHeroBgImage(websiteContent.hero.backgroundImage || '/images/hero/hero-bg.webp');
     setStatsData([...websiteContent.stats]);
     setBannerBadge(websiteContent.banner.badge);
     setBannerTitle(websiteContent.banner.title);
@@ -128,6 +130,7 @@ export default function WebsiteAdminPage() {
       title: heroTitle.trim(),
       subtitle: heroSubtitle.trim(),
       bullets: heroBullets.filter((b) => b.trim().length > 0),
+      backgroundImage: heroBgImage.trim() || '/images/hero/hero-bg.webp',
     });
   };
 
@@ -374,6 +377,25 @@ export default function WebsiteAdminPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                  Hero Fon Rasmi (URL yoki lokal yo‘l)
+                </label>
+                <Input
+                  value={heroBgImage}
+                  onChange={(e) => setHeroBgImage(e.target.value)}
+                  placeholder="/images/hero/hero-bg.webp"
+                />
+                <div className="mt-2.5 relative w-full max-w-md h-36 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroBgImage || '/images/hero/hero-bg.webp'}
+                    alt="Hero preview"
+                    className="w-full h-full object-cover object-center"
+                  />
                 </div>
               </div>
 

@@ -477,6 +477,7 @@ export const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
       'Dush, sauna va shaxsiy shkafchalar',
       'Professional trenerlar nazorati',
     ],
+    backgroundImage: '/images/hero/hero-bg.webp',
   },
   stats: [
     {
