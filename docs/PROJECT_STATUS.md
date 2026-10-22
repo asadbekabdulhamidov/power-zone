@@ -27,7 +27,13 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Responsive Navigation Bar**: Sticky frosted navigation with brand logo, section anchors (`#haqimizda`, `#galereya`, `#tariflar`, `#mahsulotlar`, `#manzil`), CTA buttons, and mobile drawer menu.
 - [x] **Hero Section**: High-impact fitness background photography, Uzbek typography, key gym statistics (1,200+ m², 60+ machines, 15+ trainers, 07:00–23:00), and CTA triggers.
 - [x] **About Gym Section**: Highlighted facility cards (Italian/German biomachine equipment, HEPA ventilation, certified coaches, Finnish sauna, transparent club rules).
-- [x] **Photo Gallery**: Filterable photo showcase with category tags (All, Strength, Cardio, Lounge/Sauna) and smooth hover states.
+- [x] **Photo Gallery with Real Gym Photos**: Filterable photo showcase with category tags (Barchasi, Kuch zonalari, Kardio, Dush va Bar). Integrated real high-resolution club photography converted to high-performance WebP assets (`public/images/gallery/`):
+  - *Og‘ir atletika va gantellar qatori* (`/images/gallery/ogir-atletika.webp`)
+  - *Keng panoramali kardio zonasi* (`/images/gallery/kardio-zona.webp`)
+  - *Zamonaviy ko‘p funksiyali trenajyorlar* (`/images/gallery/kop-funksiyali-trenajyorlar.webp`)
+  - *Dush va shinam kiyinish xonasi* (`/images/gallery/dush-kiyinish-xonasi.webp`)
+  - *Fitnes bar va qabulxona* (`/images/gallery/fitnes-bar.webp`)
+  - *Power Zone dam olish va bar hududi* (`/images/gallery/powerzone-zal-hududi.webp`)
 - [x] **Membership Plans Section**: Dynamically rendered from typed domain data with 3 core plans:
   - *Haftasiga 3 kun* — 200,000 UZS
   - *Oylik cheklanmagan* — 300,000 UZS
@@ -205,4 +211,4 @@ All listed features below have been inspected in code and verified via a clean p
 
 1. **State Persistence**: State is stored in browser `localStorage` via `src/context/fitnes-context.tsx`. Clearing browser cache restores mock data.
 2. **Turbopack Build**: ESLint rule `react/no-unescaped-entities` requires quotes and apostrophes in JSX to use `&quot;`, `&apos;`, or curly quotes `‘`/`’`.
-3. **External Images**: Images currently use Unsplash URLs. Production deployment will require local assets or an S3/Cloudflare R2 bucket.
+3. **External Images**: Landing page gallery has been migrated to local production-optimized WebP assets. Remaining Unsplash hero/about background images will be replaced as branding assets are provided.
