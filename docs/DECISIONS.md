@@ -55,6 +55,14 @@ This document captures confirmed architectural decisions, technical choices, bus
 - **Rule**: When registering a new member with a multi-month subscription (e.g., 2 months = 60 days), the calculated expiration date is explicitly passed as `customExpiryDate` to prevent sequential double-extension in `addPayment`.
 - **Payment CRUD**: To prevent financial discrepancy or accidental input lock, payments can be modified (`updatePayment`) or deleted (`deletePayment`) by administrators with synchronized updates to remaining debt and membership duration.
 
+### DEC-012: Centralized API Client & Dynamic Base URL Switching
+- **Status**: Confirmed & Implemented
+- **Decision**: All HTTP communication is centralized in `src/lib/api-client.ts` using `process.env.NEXT_PUBLIC_API_URL` (defaulting to `http://localhost:4000/api`). Deploying to cloud hosting (Render/VPS) requires zero code changes, only modifying `NEXT_PUBLIC_API_URL`.
+
+### DEC-013: 50MB Backend Payload Limit & Client-Side Image Resizing
+- **Status**: Confirmed & Implemented
+- **Decision**: Express default body-parser limits (100KB) cause HTTP 413 errors when webcam photos or file attachments are submitted. Backend is configured with `json({ limit: '50mb' })` and frontend is equipped with `compressImageFile` (800px max, JPEG 0.82) to guarantee rapid uploads without network congestion.
+
 ---
 
 ## 3. Proposals Pending Approval

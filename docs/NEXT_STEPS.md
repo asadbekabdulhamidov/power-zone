@@ -6,20 +6,13 @@ This document outlines the immediate next recommended task, remaining backlog it
 
 ## 1. Next Recommended Task
 
-### Task: Backend Architecture & PostgreSQL Database Schema Design
-Design and initialize the Node.js / Express backend service and PostgreSQL schema for FitnesFlow, matching the domain models established in `src/types/index.ts`.
+### Task: Connect PostgreSQL Database to Backend & Execute Seed
+Set a live PostgreSQL connection URL in `power-backend/.env` (from Neon.tech or local PostgreSQL), execute `npx prisma db push` and `npm run prisma:seed`, and restart the NestJS server.
 
 #### Acceptance Criteria:
-1. Define PostgreSQL schema DDL (or Prisma schema) for:
-   - `users` (admin/staff accounts with hashed passwords)
-   - `members` (full profile, phone, status, agreed price, visit counters)
-   - `membership_plans` (name, duration, price, access type, features, status)
-   - `payments` (member_id, plan_id, amount, method, status, receipt_number, timestamp)
-   - `visits` (member_id, visit_date, week_number, recorded_by)
-   - `products` (name, category, price, stock, is_active, image_url)
-2. Express server initializes with PostgreSQL connection pooling.
-3. Health check endpoint (`GET /api/health`) returns HTTP 200.
-4. Provide Docker Compose configuration (`docker-compose.yml`) for local PostgreSQL development.
+1. `GET http://localhost:4000/api/plans` returns HTTP 200 with the 3 default plans.
+2. `POST http://localhost:4000/api/auth/login` returns HTTP 201 with JWT accessToken for `admin@fitnesflow.uz`.
+3. Complete E2E verification of member registration, payments, and check-in against the live database.
 
 ---
 

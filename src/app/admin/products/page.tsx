@@ -231,20 +231,26 @@ export default function ProductsPage() {
     stopCamera();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
         setCameraError('Faqat rasm formatidagi fayllarni yuklash mumkin (JPG, PNG, WebP).');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setFormImageUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { compressImageFile } = await import('@/lib/image-util');
+        const compressed = await compressImageFile(file, 800, 0.82);
+        setFormImageUrl(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setFormImageUrl(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -296,20 +302,26 @@ export default function ProductsPage() {
     stopEditCamera();
   };
 
-  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEditFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingProduct) {
       if (!file.type.startsWith('image/')) {
         setEditCameraError('Faqat rasm formatidagi fayllarni yuklash mumkin.');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setEditingProduct({ ...editingProduct, imageUrl: reader.result });
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { compressImageFile } = await import('@/lib/image-util');
+        const compressed = await compressImageFile(file, 800, 0.82);
+        setEditingProduct({ ...editingProduct, imageUrl: compressed });
+      } catch {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            setEditingProduct({ ...editingProduct, imageUrl: reader.result });
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

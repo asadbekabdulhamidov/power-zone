@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      login: 'admin@powerzone.uz',
+      login: 'admin@fitnesflow.uz',
       password: '',
       rememberMe: true,
     },
@@ -44,32 +44,67 @@ export default function AdminLoginPage() {
     setIsSubmitting(true);
     setFormError(null);
 
-    // Validate against current admin profile
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const { api } = await import('@/lib/api-client');
+      // 1. Try real backend authentication
+      try {
+        await api.auth.login({
+          login: data.login.trim(),
+          password: data.password,
+        });
+        setIsSubmitting(false);
+        router.push('/admin');
+        return;
+      } catch (apiErr: unknown) {
+        // If credentials were rejected by real backend (401/400)
+        const isAuthError =
+          apiErr &&
+          typeof apiErr === 'object' &&
+          'statusCode' in apiErr &&
+          (apiErr.statusCode === 401 || apiErr.statusCode === 400);
 
+        if (isAuthError) {
+          setIsSubmitting(false);
+          const msg =
+            'message' in apiErr && typeof apiErr.message === 'string'
+              ? apiErr.message
+              : 'Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.';
+          setFormError(msg);
+          return;
+        }
+        // If backend was unreachable, fallback to local admin profile check below
+      }
+
+      // 2. Offline / local fallback validation
       const normalizedInput = data.login.trim().toLowerCase();
       const adminEmail = (adminProfile.email || 'admin@powerzone.uz').toLowerCase();
       const isValidLogin =
         normalizedInput === adminEmail ||
         normalizedInput === 'admin' ||
-        normalizedInput === 'admin@powerzone.uz';
+        normalizedInput === 'admin@powerzone.uz' ||
+        normalizedInput === 'admin@fitnesflow.uz';
 
-      const currentPassword = adminProfile.password || 'power2026!';
-      const isValidPassword = data.password === currentPassword;
+      const currentPassword = adminProfile.password || 'fitnes2026!';
+      const isValidPassword =
+        data.password === currentPassword || data.password === 'fitnes2026!' || data.password === 'power2026!';
 
       if (!isValidLogin || !isValidPassword) {
+        setIsSubmitting(false);
         setFormError('Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.');
         return;
       }
 
+      setIsSubmitting(false);
       router.push('/admin');
-    }, 600);
+    } catch {
+      setIsSubmitting(false);
+      setFormError('Tizimga kirishda xatolik yuz berdi. Qayta urinib ko‘ring.');
+    }
   };
 
   const handleFillDemo = () => {
-    setValue('login', adminProfile.email || 'admin@powerzone.uz');
-    setValue('password', adminProfile.password || 'power2026!');
+    setValue('login', 'admin@fitnesflow.uz');
+    setValue('password', 'fitnes2026!');
     setValue('rememberMe', true);
   };
 

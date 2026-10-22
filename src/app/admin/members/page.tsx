@@ -288,7 +288,7 @@ export default function MembersPage() {
     stopCamera(isEdit);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -297,14 +297,21 @@ export default function MembersPage() {
         else setCameraError(errorMsg);
         return;
       }
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          if (isEdit) setEditPhoto(reader.result);
-          else setFormPhoto(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { compressImageFile } = await import('@/lib/image-util');
+        const compressedDataUrl = await compressImageFile(file, 800, 0.82);
+        if (isEdit) setEditPhoto(compressedDataUrl);
+        else setFormPhoto(compressedDataUrl);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            if (isEdit) setEditPhoto(reader.result);
+            else setFormPhoto(reader.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

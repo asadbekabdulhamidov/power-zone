@@ -199,6 +199,61 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Silently sync from live backend API if available
+  useEffect(() => {
+    async function syncFromApi() {
+      try {
+        const { api } = await import('@/lib/api-client');
+        // 1. Sync plans from live PostgreSQL
+        try {
+          const apiPlans = await api.plans.getAll();
+          if (Array.isArray(apiPlans) && apiPlans.length > 0) {
+            setPlans(apiPlans);
+          }
+        } catch {
+          // Fallback to local
+        }
+
+        // 2. Sync products from live PostgreSQL
+        try {
+          const apiProducts = await api.products.getAll(true);
+          if (Array.isArray(apiProducts) && apiProducts.length > 0) {
+            setProducts(apiProducts);
+          }
+        } catch {
+          // Fallback to local
+        }
+
+        // 3. If admin is logged in with token, sync real members and payments
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          try {
+            const membersRes = await api.members.getAll({ limit: 100 });
+            if (membersRes && Array.isArray(membersRes.data) && membersRes.data.length > 0) {
+              setMembers(membersRes.data);
+            }
+          } catch {
+            // Fallback to local
+          }
+          try {
+            const paymentsRes = await api.payments.getAll({ limit: 100 });
+            if (paymentsRes && Array.isArray(paymentsRes.data) && paymentsRes.data.length > 0) {
+              setPayments(paymentsRes.data);
+            }
+          } catch {
+            // Fallback to local
+          }
+        }
+      } catch {
+        // Backend offline or unreachable, local fallback remains active
+      }
+    }
+
+    if (isInitialized) {
+      syncFromApi();
+    }
+  }, [isInitialized]);
+
   // Save to localStorage when updated
   useEffect(() => {
     if (!isInitialized) return;
