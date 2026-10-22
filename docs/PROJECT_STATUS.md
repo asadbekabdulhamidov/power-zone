@@ -73,7 +73,7 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] Remember me checkbox.
 - [x] Zod + React Hook Form schema validation with inline error feedback.
 - [x] Submit button with simulated loading state.
-- [x] One-click demo credentials autofill helper (`admin@fitnesflow.uz` / `fitnes2026!`).
+- [x] Clean production login screen (demo autofill button removed for security).
 - [x] Link to return to public landing page.
 
 ### C. Admin Dashboard (`/admin`)
