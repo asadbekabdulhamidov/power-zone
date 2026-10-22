@@ -19,6 +19,8 @@ import {
   ExternalLink,
   CheckCircle2,
   Clock,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +77,7 @@ export default function MembersPage() {
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [paymentModalMemberId, setPaymentModalMemberId] = useState<string | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [zoomedPhotoMember, setZoomedPhotoMember] = useState<Member | null>(null);
 
   // Form states for Add Member
   const [formName, setFormName] = useState('');
@@ -130,6 +133,25 @@ export default function MembersPage() {
     () => members.filter((m) => m.debtAmount && m.debtAmount > 0).length,
     [members]
   );
+
+  // Keyboard Escape listener for zoomed photo
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setZoomedPhotoMember(null);
+      }
+    };
+    if (zoomedPhotoMember) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [zoomedPhotoMember]);
   const totalDebt = useMemo(
     () => members.reduce((sum, m) => sum + (m.debtAmount || 0), 0),
     [members]
@@ -673,16 +695,30 @@ export default function MembersPage() {
                   {/* Photo & Name */}
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setZoomedPhotoMember(member);
+                        }}
+                        className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-zinc-700 hover:border-lime-400 bg-zinc-800 shrink-0 cursor-pointer group transition-all duration-200 hover:scale-110 hover:shadow-[0_0_15px_rgba(132,204,22,0.4)] focus:outline-none focus:ring-2 focus:ring-lime-400 select-none"
+                        title="Rasmni kattalashtirib ko‘rish uchun bosing"
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={member.photoUrl}
                           alt={member.fullName}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
                         />
-                      </div>
+                        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-lime-400 backdrop-blur-[1px]">
+                          <Maximize2 className="w-4 h-4" />
+                        </div>
+                      </button>
                       <div>
-                        <div className="font-bold text-white text-sm hover:text-lime-400 transition-colors">
+                        <div
+                          onClick={() => setViewingMember(member)}
+                          className="font-bold text-white text-sm hover:text-lime-400 transition-colors cursor-pointer"
+                        >
                           {member.fullName}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mt-0.5">
@@ -1723,14 +1759,22 @@ export default function MembersPage() {
           <div className="space-y-6">
             {/* Header info */}
             <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
-              <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-zinc-700 shrink-0">
+              <button
+                type="button"
+                onClick={() => setZoomedPhotoMember(activeViewingMember)}
+                className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-zinc-700 hover:border-lime-400 shrink-0 cursor-pointer group transition-all duration-200 hover:scale-105 hover:shadow-[0_0_20px_rgba(132,204,22,0.35)] focus:outline-none select-none"
+                title="Rasmni to‘liq hajmda ko‘rish"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={activeViewingMember.photoUrl}
                   alt={activeViewingMember.fullName}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
                 />
-              </div>
+                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-lime-400 backdrop-blur-[1px]">
+                  <Maximize2 className="w-5 h-5" />
+                </div>
+              </button>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-white">
@@ -2280,6 +2324,111 @@ export default function MembersPage() {
           warningText="Ushbu a’zoni o‘chirishingiz bilan uning to‘lov tarixlari va barcha tashrif yozuvlari butunlay o‘chiriladi."
           confirmText="Ha, a’zoni o‘chirish"
         />
+      )}
+
+      {/* Zoomed Member Photo Modal */}
+      {zoomedPhotoMember && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setZoomedPhotoMember(null)}
+        >
+          <div
+            className="relative max-w-lg w-full bg-[#111827] border border-zinc-700/80 rounded-3xl shadow-2xl overflow-hidden p-5 sm:p-6 text-slate-100 animate-in zoom-in-95 duration-200 select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar with Name, Details and Close button */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                  <span>{zoomedPhotoMember.fullName}</span>
+                  <Badge status={zoomedPhotoMember.status}>
+                    {zoomedPhotoMember.status.toUpperCase()}
+                  </Badge>
+                </h3>
+                <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-zinc-400">
+                  <span className="flex items-center gap-1 text-zinc-300">
+                    <Phone className="w-3 h-3 text-lime-400" />
+                    <span>{formatPhoneNumber(zoomedPhotoMember.phone)}</span>
+                  </span>
+                  <span className="text-zinc-600">•</span>
+                  <span className="text-lime-400 font-semibold">
+                    {zoomedPhotoMember.membershipPlanName}
+                  </span>
+                  {zoomedPhotoMember.gender && (
+                    <>
+                      <span className="text-zinc-600">•</span>
+                      <span className="capitalize">{zoomedPhotoMember.gender}, {zoomedPhotoMember.age} yosh</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setZoomedPhotoMember(null)}
+                className="p-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                title="Yopish (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Photo Container */}
+            <div className="relative w-full aspect-square sm:h-96 rounded-2xl overflow-hidden bg-zinc-950 border border-zinc-800 shadow-inner flex items-center justify-center group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={zoomedPhotoMember.photoUrl}
+                alt={zoomedPhotoMember.fullName}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
+              />
+              <div className="absolute bottom-3 left-3 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-white/10 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 shadow-lg">
+                <Clock className="w-3.5 h-3.5 text-lime-400" />
+                <span>Muddati: <strong className="text-white">{formatDateUz(zoomedPhotoMember.expiryDate)}</strong></span>
+              </div>
+            </div>
+
+            {/* Footer with Details & Actions */}
+            <div className="mt-4 pt-4 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-zinc-400 text-center sm:text-left">
+                {zoomedPhotoMember.debtAmount && zoomedPhotoMember.debtAmount > 0 ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold text-xs">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Qoldiq qarz: {formatUZS(zoomedPhotoMember.debtAmount)}</span>
+                  </span>
+                ) : (
+                  <span className="text-emerald-400 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Qarzdorlik yo‘q</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    const target = zoomedPhotoMember;
+                    setZoomedPhotoMember(null);
+                    setViewingMember(target);
+                  }}
+                  className="flex-1 sm:flex-none text-xs"
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1 text-lime-400" />
+                  <span>To‘liq profil</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setZoomedPhotoMember(null)}
+                  className="flex-1 sm:flex-none text-xs"
+                >
+                  <span>Yopish</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

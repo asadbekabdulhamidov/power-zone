@@ -84,6 +84,7 @@ All listed features below have been inspected in code and verified via a clean p
 
 ### D. Member Management (`/admin/members`)
 - [x] Members table with avatar photo, full name, phone number, current plan, status badges, and expiration dates.
+- [x] **Interactive Member Photo Zoom & Lightbox**: Clicking on any member's avatar photo in the table or profile detail view opens a high-resolution lightbox modal with member details, plan, phone number, debt status, and 1-click transition to full profile.
 - [x] **Telegram & Instagram Social Profiles**: Members can have their Telegram (`@username`) and Instagram usernames recorded with direct clickable chat/profile links in the table and profile details.
 - [x] **Live Web Camera Photo Capture**: Administrators can turn on the gym/club web camera directly inside the form (`getUserMedia`), view a live mirror stream, and capture a photo snapshot on the spot.
 - [x] **Device File Photo Upload**: Direct file upload from computer or phone file storage with instant preview.
