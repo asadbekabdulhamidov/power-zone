@@ -586,12 +586,31 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   // Membership Plan actions
   // Note: updating a plan does NOT overwrite existing members' membershipPriceAgreed
   const addPlan = (data: Omit<MembershipPlan, 'id'>): MembershipPlan => {
+    const tempId = generateId('plan');
     const newPlan: MembershipPlan = {
       ...data,
-      id: generateId('plan'),
+      id: tempId,
     };
     setPlans((prev) => [...prev, newPlan]);
     showToast(`"${newPlan.name}" tarif rejasi yaratildi!`);
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          const res = await api.plans.create(data);
+          if (res && res.id) {
+            setPlans((prev) =>
+              prev.map((p) => (p.id === tempId ? { ...p, id: res.id } : p))
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to create plan on server:', err);
+      }
+    })();
+
     return newPlan;
   };
 
@@ -600,12 +619,36 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       prev.map((p) => (p.id === id ? { ...p, ...data } : p))
     );
     showToast('Tarif rejasi yangilandi! Mavjud a’zolarning kelishilgan narxlari saqlab qolindi.');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('plan-')) {
+          await api.plans.update(id, data);
+        }
+      } catch (err) {
+        console.error('Failed to update plan on server:', err);
+      }
+    })();
   };
 
   const deletePlan = (id: string) => {
     const plan = plans.find((p) => p.id === id);
     setPlans((prev) => prev.filter((p) => p.id !== id));
     showToast(`"${plan?.name}" rejasi o‘chirildi.`, 'info');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('plan-')) {
+          await api.plans.delete(id);
+        }
+      } catch (err) {
+        console.error('Failed to delete plan on server:', err);
+      }
+    })();
   };
 
   const togglePlanStatus = (id: string) => {
@@ -617,6 +660,18 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       )
     );
     showToast('Tarif holati o‘zgartirildi.');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('plan-')) {
+          await api.plans.toggleStatus(id);
+        }
+      } catch (err) {
+        console.error('Failed to toggle plan status on server:', err);
+      }
+    })();
   };
 
   // Payment actions
@@ -861,16 +916,52 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     } else {
       showToast(`Qarzning bir qismi to‘landi. Qoldiq qarz: ${formatUZS(newDebt)}`, 'info');
     }
+
+    // Call settle-debt API on server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !memberId.startsWith('mem-')) {
+          await api.members.settleDebt(memberId, {
+            amount: paidAmount,
+            paymentMethod,
+            notes: `Qarz to‘lovi: ${formatUZS(paidAmount)}`,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to settle debt on server:', err);
+      }
+    })();
   };
 
   // Product actions
   const addProduct = (data: Omit<Product, 'id'>): Product => {
+    const tempId = generateId('prod');
     const newProduct: Product = {
       ...data,
-      id: generateId('prod'),
+      id: tempId,
     };
     setProducts((prev) => [newProduct, ...prev]);
     showToast(`"${newProduct.name}" mahsuloti qo‘shildi!`);
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          const res = await api.products.create(data);
+          if (res && res.id) {
+            setProducts((prev) =>
+              prev.map((p) => (p.id === tempId ? { ...p, id: res.id } : p))
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to add product on server:', err);
+      }
+    })();
+
     return newProduct;
   };
 
@@ -879,12 +970,36 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       prev.map((p) => (p.id === id ? { ...p, ...data } : p))
     );
     showToast('Mahsulot ma’lumotlari yangilandi!');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('prod-')) {
+          await api.products.update(id, data);
+        }
+      } catch (err) {
+        console.error('Failed to update product on server:', err);
+      }
+    })();
   };
 
   const deleteProduct = (id: string) => {
     const product = products.find((p) => p.id === id);
     setProducts((prev) => prev.filter((p) => p.id !== id));
     showToast(`"${product?.name}" mahsuloti o‘chirildi.`, 'info');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('prod-')) {
+          await api.products.delete(id);
+        }
+      } catch (err) {
+        console.error('Failed to delete product on server:', err);
+      }
+    })();
   };
 
   const toggleProductActive = (id: string) => {
@@ -892,6 +1007,18 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       prev.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p))
     );
     showToast('Mahsulot faollik holati yangilandi.');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('prod-')) {
+          await api.products.toggleActive(id);
+        }
+      } catch (err) {
+        console.error('Failed to toggle product status on server:', err);
+      }
+    })();
   };
 
   const resetProducts = () => {
@@ -1001,14 +1128,30 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const addContactMessage = (
     data: Omit<ContactMessage, 'id' | 'createdAt' | 'status'>
   ): ContactMessage => {
+    const tempId = generateId('msg');
     const newMsg: ContactMessage = {
       ...data,
-      id: generateId('msg'),
+      id: tempId,
       createdAt: new Date().toISOString(),
       status: 'new',
     };
     setContactMessages((prev) => [newMsg, ...prev]);
     showToast('Murojaatingiz yuborildi! Tez orada siz bilan bog‘lanamiz.', 'success');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const res = await api.messages.create(data);
+        if (res && res.id) {
+          setContactMessages((prev) =>
+            prev.map((m) => (m.id === tempId ? { ...m, id: res.id } : m))
+          );
+        }
+      } catch (err) {
+        console.error('Failed to send contact message to server:', err);
+      }
+    })();
+
     return newMsg;
   };
 
@@ -1017,11 +1160,35 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       prev.map((m) => (m.id === id ? { ...m, status } : m))
     );
     showToast('Murojaat holati yangilandi.');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('msg-')) {
+          await api.messages.updateStatus(id, status);
+        }
+      } catch (err) {
+        console.error('Failed to update message status on server:', err);
+      }
+    })();
   };
 
   const deleteContactMessage = (id: string) => {
     setContactMessages((prev) => prev.filter((m) => m.id !== id));
     showToast('Murojaat o‘chirildi.', 'info');
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('msg-')) {
+          await api.messages.delete(id);
+        }
+      } catch (err) {
+        console.error('Failed to delete message on server:', err);
+      }
+    })();
   };
 
   const resetToDefault = () => {
