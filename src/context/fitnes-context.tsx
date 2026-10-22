@@ -70,7 +70,7 @@ interface FitnesContextType {
   updateProduct: (id: string, data: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   toggleProductActive: (id: string) => void;
-  resetProducts: () => void;
+  resetProducts: () => void | Promise<void>;
 
   // Admin Profile & Security
   adminProfile: AdminProfile;
@@ -149,42 +149,24 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       if (savedProducts) {
         try {
           const parsedProducts: Product[] = JSON.parse(savedProducts);
-          // Auto-heal old or broken Unsplash URLs from earlier versions
-          const healed = parsedProducts.map((p) => {
-            if (p.imageUrl?.includes('photo-1548839140-29a749e1bc4e')) {
-              return {
-                ...p,
-                imageUrl:
-                  'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
-              };
+          // Purge legacy static mock products (prod-001..prod-009, HydraLife, etc.)
+          const hasLegacyMock = parsedProducts.some(
+            (p) =>
+              p.id.startsWith('prod-') ||
+              p.name?.includes('HydraLife') ||
+              p.name?.includes('Optimum Nutrition') ||
+              p.name?.includes('Red Bull Energy')
+          );
+          if (hasLegacyMock) {
+            try {
+              localStorage.removeItem('fitnesflow_products');
+            } catch {
+              // ignore
             }
-            if (p.imageUrl?.includes('photo-1600880292203-757bb62b4baf')) {
-              return {
-                ...p,
-                imageUrl:
-                  'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=600&q=80',
-              };
-            }
-            if (
-              p.imageUrl?.includes('photo-1622484216250-9d0442345e7f') ||
-              p.imageUrl?.includes('photo-1622467899467')
-            ) {
-              return {
-                ...p,
-                imageUrl:
-                  'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=600&q=80',
-              };
-            }
-            if (p.imageUrl?.includes('photo-1577705998148-6da4f3963bc8')) {
-              return {
-                ...p,
-                imageUrl:
-                  'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=600&q=80',
-              };
-            }
-            return p;
-          });
-          setProducts(healed);
+            setProducts(INITIAL_PRODUCTS);
+          } else {
+            setProducts(parsedProducts);
+          }
         } catch {
           setProducts(INITIAL_PRODUCTS);
         }
@@ -219,6 +201,11 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           const apiProducts = await api.products.getAll(true);
           if (Array.isArray(apiProducts) && apiProducts.length > 0) {
             setProducts(apiProducts);
+            try {
+              localStorage.setItem('fitnesflow_products', JSON.stringify(apiProducts));
+            } catch {
+              // ignore
+            }
           }
         } catch {
           // Fallback to local
@@ -1021,7 +1008,23 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     })();
   };
 
-  const resetProducts = () => {
+  const resetProducts = async () => {
+    try {
+      const { api } = await import('@/lib/api-client');
+      const apiProducts = await api.products.getAll(true);
+      if (Array.isArray(apiProducts) && apiProducts.length > 0) {
+        setProducts(apiProducts);
+        try {
+          localStorage.setItem('fitnesflow_products', JSON.stringify(apiProducts));
+        } catch {
+          // ignore
+        }
+        showToast('Mahsulotlar serverdan yangilandi!', 'success');
+        return;
+      }
+    } catch {
+      // server unreachable, use INITIAL_PRODUCTS
+    }
     setProducts(INITIAL_PRODUCTS);
     try {
       localStorage.setItem('fitnesflow_products', JSON.stringify(INITIAL_PRODUCTS));
