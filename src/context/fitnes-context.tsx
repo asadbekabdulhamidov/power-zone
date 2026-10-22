@@ -211,9 +211,23 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           // Fallback to local
         }
 
-        // 3. If admin is logged in with token, sync real members and payments
+        // 3. If admin is logged in with token, sync real members, payments, and admin profile
         const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
         if (token) {
+          try {
+            const me = await api.auth.getProfile();
+            if (me) {
+              setAdminProfile((prev) => ({
+                ...prev,
+                fullName: me.fullName || prev.fullName,
+                email: me.email || prev.email,
+                phone: me.phone || prev.phone,
+              }));
+            }
+          } catch {
+            // ignore
+          }
+
           try {
             const membersRes = await api.members.getAll({ limit: 100 });
             if (membersRes && Array.isArray(membersRes.data)) {
@@ -1050,6 +1064,19 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore
     }
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          await api.auth.updatePassword({ currentPassword: currentPass, newPassword: newPass });
+        }
+      } catch (err) {
+        console.error('Failed to update password on server:', err);
+      }
+    })();
+
     showToast('Admin paroli muvaffaqiyatli almashtirildi!', 'success');
     return { success: true, message: 'Admin paroli muvaffaqiyatli almashtirildi!' };
   };
@@ -1062,6 +1089,23 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore
     }
+
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          await api.auth.updateProfile({
+            fullName: updated.fullName,
+            email: updated.email,
+            phone: updated.phone,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to update admin profile on server:', err);
+      }
+    })();
+
     showToast('Admin profili ma’lumotlari yangilandi!', 'success');
   };
 

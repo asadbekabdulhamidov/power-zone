@@ -85,6 +85,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (response.status === 401 && typeof window !== 'undefined') {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
+    document.cookie = `${TOKEN_STORAGE_KEY}=; path=/; max-age=0; SameSite=Lax`;
   }
 
   // Javobni o'qish (JSON yoki bo'sh matn)
@@ -133,6 +134,8 @@ export const api = {
       if (typeof window !== 'undefined') {
         localStorage.setItem(TOKEN_STORAGE_KEY, res.accessToken);
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(res.user));
+        // Edge middleware va xavfsizlik uchun Cookie o'rnatish (7 kun)
+        document.cookie = `${TOKEN_STORAGE_KEY}=${res.accessToken}; path=/; max-age=604800; SameSite=Lax`;
       }
       return res;
     },
@@ -159,7 +162,19 @@ export const api = {
       if (typeof window !== 'undefined') {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
         localStorage.removeItem(USER_STORAGE_KEY);
+        document.cookie = `${TOKEN_STORAGE_KEY}=; path=/; max-age=0; SameSite=Lax`;
       }
+    },
+
+    getToken(): string | null {
+      if (typeof window === 'undefined') return null;
+      return localStorage.getItem(TOKEN_STORAGE_KEY);
+    },
+
+    isAuthenticated(): boolean {
+      if (typeof window === 'undefined') return false;
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      return Boolean(token && token.length > 20);
     },
   },
 

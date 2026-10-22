@@ -41,7 +41,22 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Location & Map Section**: Realistic Tashkent address (Amir Temur shox ko‘chasi, Bodomzor metro), operating hours, parking info, and styled dark map placeholder with navigation links.
 - [x] **Footer**: Comprehensive navigation, copyright, social links, and visible Admin Login card.
 
-### B. Admin Login (`/admin/login`)
+### B. Admin Route Guard & Authentication Protection (`src/middleware.ts` + `AdminLayout`)
+- [x] **Next.js Edge Middleware Protection (`src/middleware.ts`)**:
+  - Intercepts all `/admin/*` routes at the server/edge level.
+  - Automatically redirects unauthorized visitors without cookie tokens to `/admin/login?returnUrl=...`.
+  - Automatically redirects authenticated users away from `/admin/login` to `/admin`.
+- [x] **Client-Side Security Guard (`src/app/admin/layout.tsx`)**:
+  - Real-time token validation via `api.auth.getProfile()` on initial load.
+  - Dark high-tech loading screen ("Xavfsizlik tekshiruvi...") prevents any flash of dashboard content to unauthorized users.
+  - Invalid or expired tokens trigger automatic logout and redirection to `/admin/login?reason=session_expired`.
+- [x] **Secure Session Lifecycle & Token Management**:
+  - `api.auth.login`: Simultaneously sets `localStorage` token and Http/SameSite cookies (7-day validity).
+  - `api.auth.logout`: Purges `localStorage`, expires cookies, and cleanly resets router session.
+  - Sidebar "Tizimdan chiqish" wired to execute full logout lifecycle.
+  - Unsafe client-side mock login bypass removed: strictly validates credentials via live NestJS backend.
+
+### C. Admin Login (`/admin/login`)
 - [x] Email/Username and Password fields with show/hide toggle.
 - [x] Remember me checkbox.
 - [x] Zod + React Hook Form schema validation with inline error feedback.

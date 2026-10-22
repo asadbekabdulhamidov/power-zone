@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFitnesFlow } from '@/context/fitnes-context';
+import { api } from '@/lib/api-client';
 
 interface SidebarProps {
   onCloseMobile?: () => void;
@@ -26,8 +27,16 @@ interface SidebarProps {
 
 export function AdminSidebar({ onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { notifications, contactMessages } = useFitnesFlow();
   const unreadMessagesCount = contactMessages.filter((m) => m.status === 'new').length;
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    api.auth.logout();
+    if (onCloseMobile) onCloseMobile();
+    router.replace('/admin/login');
+  };
 
   const navItems = [
     {
@@ -159,13 +168,14 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
           <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
           <span>Mijozlar saytiga o‘tish</span>
         </Link>
-        <Link
-          href="/admin/login"
-          className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400/90 hover:text-rose-300 hover:bg-rose-950/40 rounded-xl transition-colors"
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400/90 hover:text-rose-300 hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer text-left"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Tizimdan chiqish</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -9,10 +9,10 @@ import * as z from 'zod';
 import { Dumbbell, Eye, EyeOff, ArrowLeft, Lock, Mail, ShieldAlert, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useFitnesFlow } from '@/context/fitnes-context';
+import { api, TOKEN_STORAGE_KEY } from '@/lib/api-client';
 
 const loginSchema = z.object({
-  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@powerzone.uz)'),
+  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@fitnesflow.uz)'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak'),
   rememberMe: z.boolean(),
 });
@@ -21,10 +21,37 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { adminProfile } = useFitnesFlow();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [sessionNotice, setSessionNotice] = useState<string | null>(null);
+
+  // Agar foydalanuvchi allaqachon tizimga kirgan bo'lsa, to'g'ridan-to'g'ri admin panelga yo'naltirish
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (token) {
+        api.auth
+          .getProfile()
+          .then(() => {
+            router.replace('/admin');
+          })
+          .catch(() => {
+            // Token yaroqsiz bo'lsa tozalash
+            api.auth.logout();
+          });
+      }
+
+      // Query param xabarlarini o'qish (masalan: ?reason=session_expired)
+      const params = new URLSearchParams(window.location.search);
+      const reason = params.get('reason');
+      if (reason === 'session_expired') {
+        setSessionNotice('Xavfsizlik talabi: Sessiyangiz muddati tugagan yoki token yaroqsiz. Iltimos, qaytadan tizimga kiring.');
+      } else if (reason === 'unauthorized') {
+        setSessionNotice('Admin panelga kirish uchun avval tizimga kirishingiz lozim.');
+      }
+    }
+  }, [router]);
 
   const {
     register,
@@ -43,62 +70,42 @@ export default function AdminLoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setFormError(null);
+    setSessionNotice(null);
 
     try {
-      const { api } = await import('@/lib/api-client');
-      // 1. Try real backend authentication
-      try {
-        await api.auth.login({
-          login: data.login.trim(),
-          password: data.password,
-        });
-        setIsSubmitting(false);
-        router.push('/admin');
-        return;
-      } catch (apiErr: unknown) {
-        // If credentials were rejected by real backend (401/400)
-        const isAuthError =
-          apiErr &&
-          typeof apiErr === 'object' &&
-          'statusCode' in apiErr &&
-          (apiErr.statusCode === 401 || apiErr.statusCode === 400);
+      // Haqiqiy backend orqali JWT autentifikatsiyadan o'tish
+      await api.auth.login({
+        login: data.login.trim(),
+        password: data.password,
+      });
 
-        if (isAuthError) {
-          setIsSubmitting(false);
-          const msg =
-            'message' in apiErr && typeof apiErr.message === 'string'
-              ? apiErr.message
-              : 'Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.';
-          setFormError(msg);
-          return;
-        }
-        // If backend was unreachable, fallback to local admin profile check below
-      }
+      setIsSubmitting(false);
 
-      // 2. Offline / local fallback validation
-      const normalizedInput = data.login.trim().toLowerCase();
-      const adminEmail = (adminProfile.email || 'admin@powerzone.uz').toLowerCase();
-      const isValidLogin =
-        normalizedInput === adminEmail ||
-        normalizedInput === 'admin' ||
-        normalizedInput === 'admin@powerzone.uz' ||
-        normalizedInput === 'admin@fitnesflow.uz';
+      // Agar returnUrl parametri bo'lsa, o'sha manzilga, aks holda /admin ga o'tish
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const returnUrl = params?.get('returnUrl') || '/admin';
+      router.replace(returnUrl);
+    } catch (apiErr: unknown) {
+      setIsSubmitting(false);
 
-      const currentPassword = adminProfile.password || 'fitnes2026!';
-      const isValidPassword =
-        data.password === currentPassword || data.password === 'fitnes2026!' || data.password === 'power2026!';
+      // Agar noto'g'ri parol yoki login kiritilgan bo'lsa
+      const isAuthError =
+        apiErr &&
+        typeof apiErr === 'object' &&
+        'statusCode' in apiErr &&
+        (apiErr.statusCode === 401 || apiErr.statusCode === 400);
 
-      if (!isValidLogin || !isValidPassword) {
-        setIsSubmitting(false);
-        setFormError('Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.');
+      if (isAuthError) {
+        const msg =
+          'message' in apiErr && typeof apiErr.message === 'string'
+            ? apiErr.message
+            : 'Kiritilgan login yoki parol noto‘g‘ri! Iltimos, qaytadan tekshirib ko‘ring.';
+        setFormError(msg);
         return;
       }
 
-      setIsSubmitting(false);
-      router.push('/admin');
-    } catch {
-      setIsSubmitting(false);
-      setFormError('Tizimga kirishda xatolik yuz berdi. Qayta urinib ko‘ring.');
+      // Server aloqasi uzilgan yoki Render uyg'onayotgan bo'lsa
+      setFormError('Serverga ulanishda xatolik yuz berdi. Render backend uyg‘onayotgan bo‘lishi mumkin (bir oz kuting) yoki login/parol noto‘g‘ri.');
     }
   };
 
@@ -139,17 +146,25 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        {/* Prototype notice banner */}
+        {/* Session / Security notice if redirected */}
+        {sessionNotice && (
+          <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-start gap-3 backdrop-blur-md">
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex-1 font-medium">{sessionNotice}</div>
+          </div>
+        )}
+
+        {/* Security badge and demo helper */}
         <div className="mb-6 p-3.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 flex items-start gap-3 backdrop-blur-md">
           <ShieldAlert className="w-4 h-4 text-lime-400 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="font-semibold text-white">Frontend Prototip:</span> Haqiqiy backend avtorizatsiyasi integratsiya bosqichida ulanadi. Sinov uchun quyidagi demo tugmasidan foydalanishingiz mumkin.
+            <span className="font-semibold text-white">Xavfsiz Tizim:</span> Admin qismi PostgreSQL va JWT Bearer token bilan himoyalangan. Tizimga kirish uchun maxsus administrator hisob ma’lumotlari talab qilinadi.
             <button
               type="button"
               onClick={handleFillDemo}
-              className="mt-1.5 block text-lime-400 hover:underline font-bold text-[11px]"
+              className="mt-1.5 block text-lime-400 hover:underline font-bold text-[11px] cursor-pointer"
             >
-              Demo login/parolni avtomatik to‘ldirish
+              Standart admin hisobini to‘ldirish (admin / fitnes2026!)
             </button>
           </div>
         </div>
