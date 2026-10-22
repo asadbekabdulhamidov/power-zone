@@ -27,7 +27,7 @@ import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal';
 
 export default function PaymentsPage() {
-  const { payments, members, stats, updatePayment, deletePayment } = useFitnesFlow();
+  const { payments, members, plans, stats, updatePayment, deletePayment } = useFitnesFlow();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
@@ -36,6 +36,7 @@ export default function PaymentsPage() {
 
   // Edit payment states
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [editPlanId, setEditPlanId] = useState<string>('');
   const [editAmount, setEditAmount] = useState<number | ''>(0);
   const [editMethod, setEditMethod] = useState<PaymentMethod>('cash');
   const [editDate, setEditDate] = useState<string>('');
@@ -46,11 +47,35 @@ export default function PaymentsPage() {
   // Delete payment state
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
+  const currentEditPlan = useMemo(
+    () => plans.find((p) => p.id === editPlanId),
+    [plans, editPlanId]
+  );
+
+  const editExpectedTotal = useMemo(() => {
+    const rate = currentEditPlan?.price || 200000;
+    const isSingle = currentEditPlan?.accessType === 'single_visit';
+    return isSingle ? rate : rate * (Number(editMonths) || 1);
+  }, [currentEditPlan, editMonths]);
+
+  const projectedNewExpiryDate = useMemo(() => {
+    if (!editingPayment) return '';
+    const targetMember = members.find((m) => m.id === editingPayment.memberId);
+    const startDateBase =
+      targetMember?.startDate || editDate || new Date().toISOString().split('T')[0];
+    const durationDays =
+      (currentEditPlan?.accessType === 'single_visit' ? 1 : 30) * (Number(editMonths) || 1);
+    const dateObj = new Date(startDateBase);
+    dateObj.setDate(dateObj.getDate() + durationDays);
+    return dateObj.toISOString().split('T')[0];
+  }, [editingPayment, members, editDate, currentEditPlan, editMonths]);
+
   const handleOpenEdit = (p: Payment) => {
     setEditingPayment(p);
+    setEditPlanId(p.membershipPlanId || (plans[0]?.id ?? ''));
     setEditAmount(p.amount);
     setEditMethod(p.paymentMethod);
-    setEditDate(p.paymentDate.split('T')[0]);
+    setEditDate(p.paymentDate ? p.paymentDate.split('T')[0] : '');
     setEditMonths(p.monthsCount || 1);
     setEditDebt(p.remainingDebt !== undefined ? p.remainingDebt : 0);
     setEditNotes(p.notes || '');
@@ -70,6 +95,9 @@ export default function PaymentsPage() {
       monthsCount: editMonths,
       remainingDebt: numDebt,
       notes: editNotes.trim() || undefined,
+      membershipPlanId: currentEditPlan?.id || editingPayment.membershipPlanId,
+      membershipPlanName: currentEditPlan?.name || editingPayment.membershipPlanName,
+      newExpiryDate: projectedNewExpiryDate,
     });
 
     setEditingPayment(null);
@@ -532,7 +560,7 @@ export default function PaymentsPage() {
         >
           <form onSubmit={handleEditSubmit} className="space-y-4">
             {/* Payment Summary Badge */}
-            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-zinc-400">Mijoz:</span>
                 <span className="font-bold text-white">
@@ -543,22 +571,68 @@ export default function PaymentsPage() {
                 <span className="text-zinc-400">Kvitansiya №:</span>
                 <span className="font-mono text-lime-400 font-bold">{editingPayment.receiptNumber}</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Tarif:</span>
-                <span className="text-zinc-200">{editingPayment.membershipPlanName}</span>
+            </div>
+
+            {/* Plan selection */}
+            <div className="space-y-1">
+              <Select
+                label="Tarif Rejasi (Reja noto‘g‘ri kiritilgan bo‘lsa o‘zgartiring)"
+                options={plans.map((p) => ({
+                  label: `${p.name} (${formatUZS(p.price)}/oy)`,
+                  value: p.id,
+                }))}
+                value={editPlanId}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setEditPlanId(newId);
+                  const pl = plans.find((item) => item.id === newId);
+                  if (pl) {
+                    const months = pl.accessType === 'single_visit' ? 1 : editMonths;
+                    if (pl.accessType === 'single_visit') setEditMonths(1);
+                    const newTotal = pl.price * months;
+                    setEditAmount(newTotal);
+                    setEditDebt(0);
+                  }
+                }}
+              />
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
+                <span>Reja bo‘yicha to‘liq summa: <strong className="text-lime-400">{formatUZS(editExpectedTotal)}</strong></span>
+                {projectedNewExpiryDate && (
+                  <span>Yangi a’zolik muddati: <strong className="text-zinc-200">{formatDateUz(projectedNewExpiryDate)}</strong></span>
+                )}
               </div>
             </div>
 
-            <Input
-              label="To‘langan Summa (UZS)"
-              type="number"
-              value={editAmount}
-              onChange={(e) => setEditAmount(parseNumericInput(e.target.value))}
-              min={0}
-              step={5000}
-              required
-              helperText={`Formatlangan: ${formatUZS(editAmount)}`}
-            />
+            <div className="space-y-1.5">
+              <Input
+                label="To‘langan Summa (UZS)"
+                type="number"
+                value={editAmount}
+                onChange={(e) => {
+                  const val = parseNumericInput(e.target.value);
+                  setEditAmount(val);
+                  // Auto-calculate suggested debt
+                  const numVal = val === '' ? 0 : Number(val);
+                  setEditDebt(Math.max(0, editExpectedTotal - numVal));
+                }}
+                min={0}
+                step={5000}
+                required
+                helperText={`Formatlangan: ${formatUZS(editAmount)}`}
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditAmount(editExpectedTotal);
+                    setEditDebt(0);
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-medium transition-colors"
+                >
+                  To‘liq summa qilish ({formatUZS(editExpectedTotal)})
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
@@ -594,7 +668,14 @@ export default function PaymentsPage() {
                   { label: '12 oy (360 kun)', value: '12' },
                 ]}
                 value={String(editMonths)}
-                onChange={(e) => setEditMonths(Number(e.target.value) || 1)}
+                onChange={(e) => {
+                  const m = Number(e.target.value) || 1;
+                  setEditMonths(m);
+                  const rate = currentEditPlan?.price || 200000;
+                  const newTotal = rate * m;
+                  setEditAmount(newTotal);
+                  setEditDebt(0);
+                }}
               />
 
               <Input

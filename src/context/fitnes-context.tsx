@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import {
   Member,
+  MemberStatus,
   MembershipPlan,
   Payment,
   PaymentMethod,
@@ -320,7 +321,26 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     setMembers((prev) =>
       prev.map((m) => (m.id === id ? { ...m, ...data } : m))
     );
-    showToast('A’zo ma’lumotlari yangilandi!');
+
+    // If member's name, phone, or plan changes, synchronize corresponding payment records
+    if (data.fullName || data.phone || data.membershipPlanId || data.membershipPlanName) {
+      setPayments((prev) =>
+        prev.map((p) => {
+          if (p.memberId === id) {
+            return {
+              ...p,
+              memberName: data.fullName ?? p.memberName,
+              memberPhone: data.phone ?? p.memberPhone,
+              membershipPlanId: data.membershipPlanId ?? p.membershipPlanId,
+              membershipPlanName: data.membershipPlanName ?? p.membershipPlanName,
+            };
+          }
+          return p;
+        })
+      );
+    }
+
+    showToast('A’zo ma’lumotlari muvaffaqiyatli yangilandi!', 'success');
   };
 
   const deleteMember = (id: string) => {
@@ -496,9 +516,11 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       })
     );
 
-    // If remaining debt or dates are updated, sync with the member
+    // If remaining debt, dates, or plan are updated, sync with the member
     if (targetMemberId && updatedPayment) {
       const up = updatedPayment as Payment;
+      const associatedPlan = plans.find((pl) => pl.id === up.membershipPlanId);
+
       setMembers((prev) =>
         prev.map((m) => {
           if (m.id === targetMemberId) {
@@ -507,6 +529,9 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
               debtAmount: up.remainingDebt !== undefined ? up.remainingDebt : m.debtAmount,
               expiryDate: updates.newExpiryDate || m.expiryDate,
               paidMonths: up.monthsCount || m.paidMonths,
+              membershipPlanId: up.membershipPlanId || m.membershipPlanId,
+              membershipPlanName: up.membershipPlanName || m.membershipPlanName,
+              accessType: associatedPlan?.accessType || m.accessType,
             };
           }
           return m;
@@ -521,7 +546,47 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     const payment = payments.find((p) => p.id === id);
     if (!payment) return;
 
+    const targetMemberId = payment.memberId;
+    const remainingPayments = payments.filter((p) => p.id !== id && p.memberId === targetMemberId);
+
     setPayments((prev) => prev.filter((p) => p.id !== id));
+
+    // Rollback or adjust member's financial & subscription state
+    if (targetMemberId) {
+      setMembers((prev) =>
+        prev.map((m) => {
+          if (m.id === targetMemberId) {
+            if (remainingPayments.length > 0) {
+              // Roll back expiry date by the duration of the deleted payment
+              const months = payment.monthsCount || 1;
+              const durationDays = months * 30;
+              const currentExp = new Date(m.expiryDate);
+              currentExp.setDate(currentExp.getDate() - durationDays);
+              const rolledBackExpiry = currentExp.toISOString().split('T')[0];
+
+              // Latest remaining payment's debt
+              const latestRemaining = remainingPayments[remainingPayments.length - 1];
+
+              return {
+                ...m,
+                expiryDate: rolledBackExpiry,
+                debtAmount: latestRemaining.remainingDebt ?? m.debtAmount,
+              };
+            } else {
+              // No payments left (e.g. initial payment was deleted because of mistaken admission)
+              const fullAgreedPrice = m.membershipPriceAgreed || 200000;
+              return {
+                ...m,
+                debtAmount: fullAgreedPrice * (m.paidMonths || 1),
+                status: 'expired' as MemberStatus,
+              };
+            }
+          }
+          return m;
+        })
+      );
+    }
+
     showToast(`Kvitansiya № ${payment.receiptNumber} to‘lovi o‘chirildi.`, 'info');
   };
 

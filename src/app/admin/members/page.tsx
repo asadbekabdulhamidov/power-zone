@@ -101,11 +101,22 @@ export default function MembersPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Edit form states
+  // Edit form states for Member
+  const [editFullName, setEditFullName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editGender, setEditGender] = useState<'erkak' | 'ayol'>('erkak');
+  const [editAge, setEditAge] = useState<number | ''>(25);
+  const [editPlanId, setEditPlanId] = useState('');
+  const [editPriceAgreed, setEditPriceAgreed] = useState<number | ''>(200000);
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editPaidMonths, setEditPaidMonths] = useState<number>(1);
+  const [editExpiryDate, setEditExpiryDate] = useState('');
+  const [editStatus, setEditStatus] = useState<MemberStatus>('active');
   const [editTelegram, setEditTelegram] = useState('');
   const [editInstagram, setEditInstagram] = useState('');
   const [editPhoto, setEditPhoto] = useState<string | null>(null);
   const [editDebtAmount, setEditDebtAmount] = useState<number | ''>(0);
+  const [editNotes, setEditNotes] = useState('');
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -130,6 +141,7 @@ export default function MembersPage() {
 
   // Payment editing & deleting states
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [editPayPlanId, setEditPayPlanId] = useState<string>('');
   const [editPayAmount, setEditPayAmount] = useState<number | ''>(0);
   const [editPayMethod, setEditPayMethod] = useState<PaymentMethod>('cash');
   const [editPayDate, setEditPayDate] = useState<string>('');
@@ -138,8 +150,32 @@ export default function MembersPage() {
   const [editPayNotes, setEditPayNotes] = useState<string>('');
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
+  const currentEditPayPlan = useMemo(
+    () => plans.find((p) => p.id === editPayPlanId),
+    [plans, editPayPlanId]
+  );
+
+  const editPayExpectedTotal = useMemo(() => {
+    const rate = currentEditPayPlan?.price || 200000;
+    const isSingle = currentEditPayPlan?.accessType === 'single_visit';
+    return isSingle ? rate : rate * (Number(editPayMonths) || 1);
+  }, [currentEditPayPlan, editPayMonths]);
+
+  const projectedNewExpiryDateForPay = useMemo(() => {
+    if (!editingPayment) return '';
+    const targetMember = members.find((m) => m.id === editingPayment.memberId);
+    const startDateBase =
+      targetMember?.startDate || editPayDate || new Date().toISOString().split('T')[0];
+    const durationDays =
+      (currentEditPayPlan?.accessType === 'single_visit' ? 1 : 30) * (Number(editPayMonths) || 1);
+    const dateObj = new Date(startDateBase);
+    dateObj.setDate(dateObj.getDate() + durationDays);
+    return dateObj.toISOString().split('T')[0];
+  }, [editingPayment, members, editPayDate, currentEditPayPlan, editPayMonths]);
+
   const handleOpenEditPayment = (p: Payment) => {
     setEditingPayment(p);
+    setEditPayPlanId(p.membershipPlanId || (plans[0]?.id ?? ''));
     setEditPayAmount(p.amount);
     setEditPayMethod(p.paymentMethod);
     setEditPayDate(p.paymentDate ? p.paymentDate.split('T')[0] : '');
@@ -157,15 +193,6 @@ export default function MembersPage() {
     const debtNum = Number(editPayDebt) || 0;
     const monthsNum = Number(editPayMonths) || 1;
 
-    // Calculate updated expiry date based on member's startDate and monthsNum if needed
-    const m = members.find((mem) => mem.id === editingPayment.memberId);
-    let newExpiryDate: string | undefined = undefined;
-    if (m && m.startDate) {
-      const base = new Date(m.startDate);
-      base.setDate(base.getDate() + monthsNum * 30);
-      newExpiryDate = base.toISOString().split('T')[0];
-    }
-
     updatePayment(editingPayment.id, {
       amount: amountNum,
       paymentMethod: editPayMethod,
@@ -173,7 +200,9 @@ export default function MembersPage() {
       monthsCount: monthsNum,
       remainingDebt: debtNum,
       notes: editPayNotes,
-      newExpiryDate,
+      membershipPlanId: currentEditPayPlan?.id || editingPayment.membershipPlanId,
+      membershipPlanName: currentEditPayPlan?.name || editingPayment.membershipPlanName,
+      newExpiryDate: projectedNewExpiryDateForPay,
     });
 
     setEditingPayment(null);
@@ -301,10 +330,24 @@ export default function MembersPage() {
 
   const handleOpenEditModal = (member: Member) => {
     setEditingMember(member);
+    setEditFullName(member.fullName);
+    setEditPhone(member.phone);
+    setEditGender(member.gender || 'erkak');
+    setEditAge(member.age || 25);
+    setEditPlanId(member.membershipPlanId);
+    setEditPriceAgreed(
+      member.membershipPriceAgreed ||
+        (plans.find((p) => p.id === member.membershipPlanId)?.price ?? 200000)
+    );
+    setEditStartDate(member.startDate);
+    setEditPaidMonths(member.paidMonths || 1);
+    setEditExpiryDate(member.expiryDate);
+    setEditStatus(member.status);
     setEditTelegram(member.telegramUsername || '');
     setEditInstagram(member.instagramUsername || '');
     setEditPhoto(member.photoUrl || null);
     setEditDebtAmount(member.debtAmount || 0);
+    setEditNotes(member.notes || '');
     setEditCameraError(null);
     setIsEditCameraActive(false);
   };
@@ -449,16 +492,34 @@ export default function MembersPage() {
       ? editInstagram.trim().replace(/^@/, '')
       : undefined;
 
+    const selectedPlan = plans.find((p) => p.id === editPlanId) || plans[0];
+    const isSingle = selectedPlan.accessType === 'single_visit';
+    const months = isSingle ? 1 : editPaidMonths;
+
+    let finalExpiry = editExpiryDate;
+    if (!finalExpiry && editStartDate) {
+      const base = new Date(editStartDate);
+      base.setDate(base.getDate() + (isSingle ? 1 : 30 * months));
+      finalExpiry = base.toISOString().split('T')[0];
+    }
+
     updateMember(editingMember.id, {
-      fullName: editingMember.fullName,
-      phone: editingMember.phone,
+      fullName: editFullName.trim(),
+      phone: editPhone.trim(),
+      gender: editGender,
+      age: editAge === '' ? 25 : Number(editAge),
       photoUrl: editPhoto || editingMember.photoUrl,
       telegramUsername: cleanTelegram,
       instagramUsername: cleanInstagram,
-      status: editingMember.status,
-      notes: editingMember.notes,
-      expiryDate: editingMember.expiryDate,
-      startDate: editingMember.startDate,
+      membershipPlanId: selectedPlan.id,
+      membershipPlanName: selectedPlan.name,
+      membershipPriceAgreed: editPriceAgreed === '' ? selectedPlan.price : Number(editPriceAgreed),
+      accessType: selectedPlan.accessType,
+      startDate: editStartDate,
+      expiryDate: finalExpiry,
+      paidMonths: months,
+      status: editStatus,
+      notes: editNotes.trim() || undefined,
       debtAmount: editDebtAmount === '' ? 0 : Number(editDebtAmount),
     });
 
@@ -1280,21 +1341,38 @@ export default function MembersPage() {
 
             <Input
               label="Ism-Familiya"
-              value={editingMember.fullName}
-              onChange={(e) =>
-                setEditingMember({ ...editingMember, fullName: e.target.value })
-              }
+              value={editFullName}
+              onChange={(e) => setEditFullName(e.target.value)}
               required
             />
 
-            <Input
-              label="Telefon Raqami"
-              value={editingMember.phone}
-              onChange={(e) =>
-                setEditingMember({ ...editingMember, phone: e.target.value })
-              }
-              required
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Input
+                label="Telefon Raqami"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                required
+              />
+
+              <Select
+                label="Jinsi"
+                options={[
+                  { label: 'Erkak', value: 'erkak' },
+                  { label: 'Ayol', value: 'ayol' },
+                ]}
+                value={editGender}
+                onChange={(e) => setEditGender(e.target.value as 'erkak' | 'ayol')}
+              />
+
+              <Input
+                label="Yoshi"
+                type="number"
+                min={10}
+                max={99}
+                value={editAge}
+                onChange={(e) => setEditAge(parseNumericInput(e.target.value))}
+              />
+            </div>
 
             {/* Telegram & Instagram in Edit */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1315,6 +1393,109 @@ export default function MembersPage() {
               />
             </div>
 
+            {/* PLAN AND AGREED PRICE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+              <Select
+                label="Tarif Rejasi"
+                options={plans.map((p) => ({
+                  label: `${p.name} (${formatUZS(p.price)}/oy)`,
+                  value: p.id,
+                }))}
+                value={editPlanId}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setEditPlanId(newId);
+                  const pl = plans.find((item) => item.id === newId);
+                  if (pl) {
+                    setEditPriceAgreed(pl.price);
+                    if (pl.accessType === 'single_visit') {
+                      setEditPaidMonths(1);
+                    }
+                    if (editStartDate) {
+                      const base = new Date(editStartDate);
+                      base.setDate(base.getDate() + (pl.accessType === 'single_visit' ? 1 : 30 * editPaidMonths));
+                      setEditExpiryDate(base.toISOString().split('T')[0]);
+                    }
+                  }
+                }}
+              />
+
+              <Input
+                label="Kelishilgan Oylik Narx (UZS)"
+                type="number"
+                value={editPriceAgreed}
+                onChange={(e) => setEditPriceAgreed(parseNumericInput(e.target.value))}
+                min={0}
+                step={5000}
+                helperText={`Asl narx: ${formatUZS(plans.find((p) => p.id === editPlanId)?.price || 200000)}`}
+              />
+            </div>
+
+            {/* START DATE & DURATION (MONTHS) */}
+            <div className="space-y-3 p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Boshlanish Sanasi"
+                  type="date"
+                  value={editStartDate}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    setEditStartDate(newStart);
+                    if (newStart) {
+                      const base = new Date(newStart);
+                      base.setDate(base.getDate() + 30 * editPaidMonths);
+                      setEditExpiryDate(base.toISOString().split('T')[0]);
+                    }
+                  }}
+                  required
+                />
+
+                <Input
+                  label="Tugash Sanasi"
+                  type="date"
+                  value={editExpiryDate}
+                  onChange={(e) => setEditExpiryDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* Quick Months Selector */}
+              <div>
+                <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-lime-400" />
+                    <span>A’zolik Muddati (oylar soni)</span>
+                  </span>
+                  <span className="text-xs font-bold text-lime-400">
+                    {editPaidMonths} oy ({editPaidMonths * 30} kun)
+                  </span>
+                </label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[1, 2, 3, 6, 12].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setEditPaidMonths(m);
+                        if (editStartDate) {
+                          const base = new Date(editStartDate);
+                          base.setDate(base.getDate() + 30 * m);
+                          setEditExpiryDate(base.toISOString().split('T')[0]);
+                        }
+                      }}
+                      className={`py-1.5 px-2 text-xs font-semibold rounded-xl border transition-all text-center cursor-pointer ${
+                        editPaidMonths === m
+                          ? 'bg-lime-500 text-zinc-950 border-lime-400 font-extrabold shadow-sm'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {m} oy
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label="Holati"
@@ -1324,45 +1505,81 @@ export default function MembersPage() {
                   { label: 'Tugagan', value: 'expired' },
                   { label: 'Muzlatilgan', value: 'frozen' },
                 ]}
-                value={editingMember.status}
-                onChange={(e) =>
-                  setEditingMember({
-                    ...editingMember,
-                    status: e.target.value as MemberStatus,
-                  })
-                }
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as MemberStatus)}
               />
 
               <Input
-                label="Tugash Sanasi"
-                type="date"
-                value={editingMember.expiryDate}
-                onChange={(e) =>
-                  setEditingMember({ ...editingMember, expiryDate: e.target.value })
+                label="Qarz Miqdori (UZS)"
+                type="number"
+                min={0}
+                step={5000}
+                value={editDebtAmount}
+                onChange={(e) => setEditDebtAmount(parseNumericInput(e.target.value))}
+                helperText={
+                  (Number(editDebtAmount) || 0) > 0
+                    ? `Mijozda ${formatUZS(editDebtAmount)} to‘lanmagan qarz hisoblanadi.`
+                    : 'Qarz yo‘q (0 UZS).'
                 }
               />
             </div>
 
-            <Input
-              label="Qarz Miqdori (UZS)"
-              type="number"
-              min={0}
-              step={5000}
-              value={editDebtAmount}
-              onChange={(e) => setEditDebtAmount(parseNumericInput(e.target.value))}
-              helperText={
-                (Number(editDebtAmount) || 0) > 0
-                  ? `Mijozda ${formatUZS(editDebtAmount)} to‘lanmagan qarz hisoblanadi.`
-                  : 'Qarz yo‘q (0 UZS).'
-              }
-            />
+            {/* ASSOCIATED PAYMENTS SECTION */}
+            {(() => {
+              const memberPayments = payments.filter((p) => p.memberId === editingMember.id);
+              if (memberPayments.length === 0) return null;
+              return (
+                <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">
+                      Bog‘langan To‘lov Kvitansiyalari ({memberPayments.length} ta)
+                    </span>
+                    <span className="text-[11px] text-zinc-500">
+                      To‘lov xato kiritilgan bo‘lsa tahrirlang
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {memberPayments.map((p) => (
+                      <div
+                        key={p.id}
+                        className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <span className="font-mono text-lime-400 font-bold mr-2">
+                            {p.receiptNumber}
+                          </span>
+                          <span className="text-white font-medium mr-2">
+                            {formatUZS(p.amount)}
+                          </span>
+                          <span className="text-zinc-400 uppercase text-[10px]">
+                            {p.paymentMethod} • {formatDateUz(p.paymentDate)}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            handleCloseEditModal();
+                            handleOpenEditPayment(p);
+                          }}
+                          className="h-7 px-2 text-[11px] border-zinc-700 hover:border-lime-500 hover:text-lime-400"
+                        >
+                          <Edit2 className="w-3 h-3 mr-1" />
+                          <span>To‘lovni Tahrirlash</span>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <Input
               label="Izoh"
-              value={editingMember.notes || ''}
-              onChange={(e) =>
-                setEditingMember({ ...editingMember, notes: e.target.value })
-              }
+              placeholder="Qo‘shimcha izoh..."
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
             />
 
             <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
@@ -1648,6 +1865,19 @@ export default function MembersPage() {
 
               <div className="flex items-center gap-2">
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const toEdit = activeViewingMember;
+                    setViewingMember(null);
+                    handleOpenEditModal(toEdit);
+                  }}
+                  className="hover:border-lime-500 hover:text-lime-400"
+                >
+                  <Edit2 className="w-3.5 h-3.5 mr-1" />
+                  <span>Ma’lumotlarni Tahrirlash</span>
+                </Button>
+                <Button
                   variant="primary"
                   size="sm"
                   onClick={() => {
@@ -1682,7 +1912,7 @@ export default function MembersPage() {
           maxWidth="md"
         >
           <form onSubmit={handleEditPaymentSubmit} className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-1">
+            <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-zinc-400">Mijoz:</span>
                 <span className="font-bold text-white">
@@ -1693,22 +1923,67 @@ export default function MembersPage() {
                 <span className="text-zinc-400">Kvitansiya №:</span>
                 <span className="font-mono text-lime-400 font-bold">{editingPayment.receiptNumber}</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400">Tarif:</span>
-                <span className="text-zinc-200">{editingPayment.membershipPlanName}</span>
+            </div>
+
+            {/* Plan selection */}
+            <div className="space-y-1">
+              <Select
+                label="Tarif Rejasi (Reja noto‘g‘ri kiritilgan bo‘lsa o‘zgartiring)"
+                options={plans.map((p) => ({
+                  label: `${p.name} (${formatUZS(p.price)}/oy)`,
+                  value: p.id,
+                }))}
+                value={editPayPlanId}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  setEditPayPlanId(newId);
+                  const pl = plans.find((item) => item.id === newId);
+                  if (pl) {
+                    const months = pl.accessType === 'single_visit' ? 1 : editPayMonths;
+                    if (pl.accessType === 'single_visit') setEditPayMonths(1);
+                    const newTotal = pl.price * months;
+                    setEditPayAmount(newTotal);
+                    setEditPayDebt(0);
+                  }
+                }}
+              />
+              <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
+                <span>Reja bo‘yicha to‘liq summa: <strong className="text-lime-400">{formatUZS(editPayExpectedTotal)}</strong></span>
+                {projectedNewExpiryDateForPay && (
+                  <span>Yangi a’zolik muddati: <strong className="text-zinc-200">{formatDateUz(projectedNewExpiryDateForPay)}</strong></span>
+                )}
               </div>
             </div>
 
-            <Input
-              label="To‘langan Summa (UZS)"
-              type="number"
-              value={editPayAmount}
-              onChange={(e) => setEditPayAmount(parseNumericInput(e.target.value))}
-              min={0}
-              step={5000}
-              required
-              helperText={`Formatlangan: ${formatUZS(editPayAmount)}`}
-            />
+            <div className="space-y-1.5">
+              <Input
+                label="To‘langan Summa (UZS)"
+                type="number"
+                value={editPayAmount}
+                onChange={(e) => {
+                  const val = parseNumericInput(e.target.value);
+                  setEditPayAmount(val);
+                  const numVal = val === '' ? 0 : Number(val);
+                  setEditPayDebt(Math.max(0, editPayExpectedTotal - numVal));
+                }}
+                min={0}
+                step={5000}
+                required
+                helperText={`Formatlangan: ${formatUZS(editPayAmount)}`}
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditPayAmount(editPayExpectedTotal);
+                    setEditPayDebt(0);
+                  }}
+                  className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-medium transition-colors cursor-pointer"
+                >
+                  To‘liq summa qilish ({formatUZS(editPayExpectedTotal)})
+                </button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
@@ -1744,7 +2019,14 @@ export default function MembersPage() {
                   { label: '12 oy (360 kun)', value: '12' },
                 ]}
                 value={String(editPayMonths)}
-                onChange={(e) => setEditPayMonths(Number(e.target.value) || 1)}
+                onChange={(e) => {
+                  const m = Number(e.target.value) || 1;
+                  setEditPayMonths(m);
+                  const rate = currentEditPayPlan?.price || 200000;
+                  const newTotal = rate * m;
+                  setEditPayAmount(newTotal);
+                  setEditPayDebt(0);
+                }}
               />
 
               <Input

@@ -48,8 +48,8 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] Filters for status (*All*, *Active*, *Expiring*, *Expired*, *⚠️ Qarzdorlar*) and plan type.
 - [x] **Weekly 3-Day Attendance Enforcer**: Tracks and displays visits this week (`X/3 kun`). Includes check-in button that blocks visits once 3/3 is reached.
 - [x] **Add Member Modal**: Full form with name, phone, photo (camera/upload), telegram, instagram, duration (months), initial payment, partial debt calculation, and plan selection.
-- [x] **Edit Member Modal**: Updates name, phone, photo, telegram, instagram, expiration, debt amount, notes, and status.
-- [x] **Member Detail View**: Slide-out/modal view showing complete profile, debt warning banner, quick debt repayment action, visit metrics, social outreach links, and isolated payment history for that specific member.
+- [x] **Comprehensive Member Rectification & Edit Modal**: Administrators can rectify any errors made during admission, including Full Name, Phone, Gender, Age, Photo, Telegram, Instagram, Membership Plan (`membershipPlanId`), custom agreed price (`membershipPriceAgreed`), Start Date (`startDate`), Duration (`paidMonths` pills: 1, 2, 3, 6, 12 months with automatic expiry calculation), Expiration Date (`expiryDate`), Status, Debt Amount, and Notes. Includes a direct "Bog‘langan To‘lovlar" section with 1-click payment editing.
+- [x] **Member Detail View**: Slide-out/modal view showing complete profile, debt warning banner, direct "Ma’lumotlarni Tahrirlash" action, quick debt repayment action, visit metrics, social outreach links, and isolated payment history table with per-payment Edit and Delete actions.
 - [x] Delete member action with confirmation dialog.
 
 ### E. Membership Plans Management (`/admin/memberships`)
