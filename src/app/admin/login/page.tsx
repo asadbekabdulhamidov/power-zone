@@ -34,7 +34,7 @@ export default function AdminLoginPage() {
         api.auth
           .getProfile()
           .then(() => {
-            router.replace('/admin');
+            window.location.href = '/admin';
           })
           .catch(() => {
             // Token yaroqsiz bo'lsa tozalash
@@ -51,7 +51,7 @@ export default function AdminLoginPage() {
         setSessionNotice('Admin panelga kirish uchun avval tizimga kirishingiz lozim.');
       }
     }
-  }, [router]);
+  }, []);
 
   const {
     register,
@@ -79,12 +79,17 @@ export default function AdminLoginPage() {
         password: data.password,
       });
 
-      setIsSubmitting(false);
-
       // Agar returnUrl parametri bo'lsa, o'sha manzilga, aks holda /admin ga o'tish
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-      const returnUrl = params?.get('returnUrl') || '/admin';
-      router.replace(returnUrl);
+      const paramUrl = params?.get('returnUrl');
+      const targetUrl = paramUrl && !paramUrl.includes('/login') && paramUrl.startsWith('/admin') ? paramUrl : '/admin';
+
+      // Brauzerni to'liq yangilab o'tkazish (Next.js keshini aylanib o'tib, yangi cookie/tokenni serverga jo'natish uchun)
+      if (typeof window !== 'undefined') {
+        window.location.href = targetUrl;
+      } else {
+        router.push(targetUrl);
+      }
     } catch (apiErr: unknown) {
       setIsSubmitting(false);
 

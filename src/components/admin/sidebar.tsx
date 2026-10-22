@@ -35,7 +35,11 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
     e.preventDefault();
     api.auth.logout();
     if (onCloseMobile) onCloseMobile();
-    router.replace('/admin/login');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin/login';
+    } else {
+      router.replace('/admin/login');
+    }
   };
 
   const navItems = [

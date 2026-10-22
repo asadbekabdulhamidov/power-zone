@@ -75,9 +75,12 @@ export default function AdminLayout({
 
     if (!token) {
       setIsAuthenticated(false);
-      router.replace(
-        `/admin/login?returnUrl=${encodeURIComponent(pathname || '/admin')}`
-      );
+      const target = `/admin/login?returnUrl=${encodeURIComponent(pathname || '/admin')}`;
+      if (typeof window !== 'undefined') {
+        window.location.replace(target);
+      } else {
+        router.replace(target);
+      }
       return;
     }
 
@@ -93,11 +96,14 @@ export default function AdminLayout({
         if (isMounted) {
           api.auth.logout();
           setIsAuthenticated(false);
-          router.replace(
-            `/admin/login?reason=session_expired&returnUrl=${encodeURIComponent(
-              pathname || '/admin'
-            )}`
-          );
+          const target = `/admin/login?reason=session_expired&returnUrl=${encodeURIComponent(
+            pathname || '/admin'
+          )}`;
+          if (typeof window !== 'undefined') {
+            window.location.replace(target);
+          } else {
+            router.replace(target);
+          }
         }
       });
 
