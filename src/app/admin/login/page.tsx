@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { Dumbbell, Eye, EyeOff, ArrowLeft, Lock, Mail, ShieldAlert, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { api, TOKEN_STORAGE_KEY } from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 
 const loginSchema = z.object({
   login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@fitnesflow.uz)'),
@@ -26,23 +26,9 @@ export default function AdminLoginPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sessionNotice, setSessionNotice] = useState<string | null>(null);
 
-  // Agar foydalanuvchi allaqachon tizimga kirgan bo'lsa, to'g'ridan-to'g'ri admin panelga yo'naltirish
+  // Query param xabarlarini o'qish (masalan: ?reason=session_expired)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (token) {
-        api.auth
-          .getProfile()
-          .then(() => {
-            window.location.href = '/admin';
-          })
-          .catch(() => {
-            // Token yaroqsiz bo'lsa tozalash
-            api.auth.logout();
-          });
-      }
-
-      // Query param xabarlarini o'qish (masalan: ?reason=session_expired)
       const params = new URLSearchParams(window.location.search);
       const reason = params.get('reason');
       if (reason === 'session_expired') {

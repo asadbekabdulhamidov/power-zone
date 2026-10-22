@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2 } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { AdminTopbar } from '@/components/admin/topbar';
 import { QuickPaymentModal } from '@/components/admin/quick-payment-modal';
@@ -53,21 +52,23 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isQuickPayOpen, setIsQuickPayOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  // If path is login page, render without sidebar/topbar
+  // Login sahifasi uchun hech qanday layout va guard qo'llanilmaydi
   const isLoginPage = pathname === '/admin/login';
 
-  useEffect(() => {
-    if (isLoginPage) {
-      setIsAuthenticated(true);
-      return;
-    }
+  // Dastlabki holat: login sahifasida doimo true, qolganlarida token borligiga qarab
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    if (pathname === '/admin/login') return true;
+    return Boolean(localStorage.getItem(TOKEN_STORAGE_KEY));
+  });
 
-    // 1. LocalStorage va Cookie-da token mavjudligini tekshirish
+  useEffect(() => {
+    if (isLoginPage) return;
+
+    // 1. Maxfiy admin sahifalarida token mavjudligini tekshirish
     const token =
       typeof window !== 'undefined'
         ? localStorage.getItem(TOKEN_STORAGE_KEY)
@@ -75,68 +76,42 @@ export default function AdminLayout({
 
     if (!token) {
       setIsAuthenticated(false);
-      const target = `/admin/login?returnUrl=${encodeURIComponent(pathname || '/admin')}`;
-      if (typeof window !== 'undefined') {
-        window.location.replace(target);
-      } else {
-        router.replace(target);
-      }
+      window.location.replace('/admin/login');
       return;
     }
 
-    // 2. Tokenni haqiqiy ekanligini live NestJS backend orqali tekshirish
+    setIsAuthenticated(true);
+
+    // 2. Tokenni fonda tekshirish (faqat 401 Unauthorized bo'lgandagina sessiyani to'xtatish)
     let isMounted = true;
     api.auth
       .getProfile()
-      .then(() => {
-        if (isMounted) setIsAuthenticated(true);
-      })
-      .catch((err) => {
-        console.warn('Avtorizatsiya tekshiruvidan o‘tmadi:', err);
-        if (isMounted) {
+      .catch((err: unknown) => {
+        const isUnauthorized =
+          err &&
+          typeof err === 'object' &&
+          'statusCode' in err &&
+          err.statusCode === 401;
+
+        if (isUnauthorized && isMounted) {
           api.auth.logout();
           setIsAuthenticated(false);
-          const target = `/admin/login?reason=session_expired&returnUrl=${encodeURIComponent(
-            pathname || '/admin'
-          )}`;
-          if (typeof window !== 'undefined') {
-            window.location.replace(target);
-          } else {
-            router.replace(target);
-          }
+          window.location.replace('/admin/login?reason=session_expired');
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [pathname, isLoginPage, router]);
+  }, [pathname, isLoginPage]);
 
-  // Login sahifasi uchun layoutsiz render
+  // Login sahifasi bo'lsa, to'g'ridan-to'g'ri render qilish
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Token tekshirilayotganda yuklanish ekrani (kontent hech qachon chaqnab ko'rinmaydi)
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-[#090d16] flex flex-col items-center justify-center p-4 select-none">
-        <div className="w-16 h-16 rounded-2xl bg-lime-500/10 border border-lime-500/25 flex items-center justify-center text-lime-400 mb-4 animate-pulse shadow-[0_0_25px_rgba(132,204,22,0.15)]">
-          <ShieldCheck className="w-8 h-8 text-lime-400" />
-        </div>
-        <div className="flex items-center gap-2.5 text-white font-bold text-base tracking-wide">
-          <Loader2 className="w-4 h-4 animate-spin text-lime-400" />
-          <span>Xavfsizlik tekshiruvi...</span>
-        </div>
-        <p className="text-xs text-zinc-500 mt-2">
-          Power Zone boshqaruv tizimi autentifikatsiyasi
-        </p>
-      </div>
-    );
-  }
-
-  // Token yo'q yoki eskirgan bo'lsa hech narsa ko'rsatilmaydi (loginga yo'naltirilmoqda)
-  if (isAuthenticated === false) {
+  // Token yo'q bo'lsa va loginga yo'naltirilayotgan bo'lsa, ma'lumotlarni ko'rsatmaslik
+  if (!isAuthenticated) {
     return null;
   }
 
