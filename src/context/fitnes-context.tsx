@@ -229,12 +229,46 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         if (token) {
           try {
             const membersRes = await api.members.getAll({ limit: 100 });
-            if (membersRes && Array.isArray(membersRes.data) && membersRes.data.length > 0) {
-              setMembers(membersRes.data);
+            if (membersRes && Array.isArray(membersRes.data)) {
+              if (membersRes.data.length > 0) {
+                setMembers(membersRes.data);
+              } else {
+                // If PostgreSQL has 0 members, but browser has locally created members (e.g. Asadbek),
+                // automatically push unsynced local members to PostgreSQL!
+                const localUnsynced = members.filter((m) => m.id.startsWith('mem-'));
+                for (const lm of localUnsynced) {
+                  try {
+                    const res = await api.members.create({
+                      fullName: lm.fullName,
+                      phone: lm.phone,
+                      gender: lm.gender || 'erkak',
+                      age: lm.age || 25,
+                      telegramUsername: lm.telegramUsername,
+                      instagramUsername: lm.instagramUsername,
+                      photoUrl: lm.photoUrl,
+                      membershipPlanId: lm.membershipPlanId,
+                      membershipPriceAgreed: lm.membershipPriceAgreed,
+                      paidMonths: lm.paidMonths || 1,
+                      paidAmount: (lm.membershipPriceAgreed * (lm.paidMonths || 1)) - (lm.debtAmount || 0),
+                      paymentMethod: 'cash',
+                      startDate: lm.startDate,
+                      notes: lm.notes,
+                    });
+                    if (res && res.member) {
+                      setMembers((prev) =>
+                        prev.map((m) => (m.id === lm.id ? { ...m, ...res.member, id: res.member.id } : m))
+                      );
+                    }
+                  } catch (pushErr) {
+                    console.error('Failed to sync offline member to server:', pushErr);
+                  }
+                }
+              }
             }
           } catch {
             // Fallback to local
           }
+
           try {
             const paymentsRes = await api.payments.getAll({ limit: 100 });
             if (paymentsRes && Array.isArray(paymentsRes.data) && paymentsRes.data.length > 0) {
@@ -252,6 +286,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     if (isInitialized) {
       syncFromApi();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
 
   // Save to localStorage when updated
@@ -360,15 +395,68 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
 
   // Member CRUD actions
   const addMember = (data: Omit<Member, 'id' | 'createdAt' | 'totalVisits' | 'visitsThisWeek'>): Member => {
+    const tempId = generateId('mem');
     const newMember: Member = {
       ...data,
-      id: generateId('mem'),
+      id: tempId,
       totalVisits: 0,
       visitsThisWeek: 0,
       createdAt: new Date().toISOString().split('T')[0],
     };
     setMembers((prev) => [newMember, ...prev]);
     showToast(`Yangi a’zo "${newMember.fullName}" muvaffaqiyatli qo‘shildi!`);
+
+    // Asynchronously push to live PostgreSQL backend (Neon.tech)
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token) {
+          const months = data.paidMonths || 1;
+          const agreedPrice = data.membershipPriceAgreed || 200000;
+          const debt = data.debtAmount || 0;
+          const paidAmount = Math.max(0, agreedPrice * months - debt);
+
+          const res = await api.members.create({
+            fullName: data.fullName,
+            phone: data.phone,
+            gender: data.gender || 'erkak',
+            age: data.age || 25,
+            telegramUsername: data.telegramUsername,
+            instagramUsername: data.instagramUsername,
+            photoUrl: data.photoUrl,
+            membershipPlanId: data.membershipPlanId,
+            membershipPriceAgreed: agreedPrice,
+            paidMonths: months,
+            paidAmount,
+            paymentMethod: 'cash',
+            startDate: data.startDate,
+            notes: data.notes,
+          });
+
+          if (res && res.member) {
+            // Replace temporary local ID with real PostgreSQL UUID from Neon.tech
+            setMembers((prev) =>
+              prev.map((m) => (m.id === tempId ? { ...m, ...res.member, id: res.member.id } : m))
+            );
+            if (res.initialPayment) {
+              setPayments((prev) => [
+                {
+                  ...res.initialPayment,
+                  paymentDate: res.initialPayment.paymentDate
+                    ? new Date(res.initialPayment.paymentDate).toISOString().split('T')[0]
+                    : new Date().toISOString().split('T')[0],
+                },
+                ...prev.filter((p) => p.memberId !== tempId),
+              ]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save member to PostgreSQL server:', err);
+      }
+    })();
+
     return newMember;
   };
 
@@ -396,12 +484,38 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
 
     showToast('A’zo ma’lumotlari muvaffaqiyatli yangilandi!', 'success');
+
+    // Asynchronously update on server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('mem-')) {
+          await api.members.update(id, data);
+        }
+      } catch (err) {
+        console.error('Failed to update member on server:', err);
+      }
+    })();
   };
 
   const deleteMember = (id: string) => {
     const member = members.find((m) => m.id === id);
     setMembers((prev) => prev.filter((m) => m.id !== id));
     showToast(`"${member?.fullName || "A'zo"}" ro‘yxatdan o‘chirildi.`, 'info');
+
+    // Asynchronously delete on server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('mem-')) {
+          await api.members.delete(id);
+        }
+      } catch (err) {
+        console.error('Failed to delete member on server:', err);
+      }
+    })();
   };
 
   // Record a gym visit (handles rules & visit counters)
@@ -452,6 +566,20 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       ? `Tashrif qayd etildi! Ushbu haftada: ${newVisitsThisWeek}/3 kun ishlatildi.`
       : `Tashrif muvaffaqiyatli qayd etildi! Jami tashriflar: ${newTotalVisits}.`;
     showToast(msg, 'success');
+
+    // Asynchronously record on server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !memberId.startsWith('mem-')) {
+          await api.members.recordVisit(memberId);
+        }
+      } catch (err) {
+        console.error('Failed to record visit on server:', err);
+      }
+    })();
+
     return { success: true, message: msg };
   };
 
@@ -558,6 +686,37 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         'success'
       );
     }
+
+    // Asynchronously send payment to server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !data.memberId.startsWith('mem-')) {
+          const res = await api.payments.create({
+            memberId: data.memberId,
+            membershipPlanId: data.membershipPlanId,
+            amount: data.amount,
+            monthsCount: months,
+            paymentMethod: data.paymentMethod,
+            paymentDate: data.paymentDate,
+            notes: data.notes,
+          });
+          if (res && res.id) {
+            setPayments((prev) =>
+              prev.map((p) =>
+                p.id === newPayment.id
+                  ? { ...p, id: res.id, receiptNumber: res.receiptNumber || p.receiptNumber }
+                  : p
+              )
+            );
+          }
+        }
+      } catch (err) {
+        console.error('Failed to record payment on server:', err);
+      }
+    })();
+
     return newPayment;
   };
 
@@ -648,6 +807,19 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
 
     showToast(`Kvitansiya № ${payment.receiptNumber} to‘lovi o‘chirildi.`, 'info');
+
+    // Asynchronously delete payment from server
+    (async () => {
+      try {
+        const { api } = await import('@/lib/api-client');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
+        if (token && !id.startsWith('pay-')) {
+          await api.payments.delete(id);
+        }
+      } catch (err) {
+        console.error('Failed to delete payment on server:', err);
+      }
+    })();
   };
 
   const settleMemberDebt = (
