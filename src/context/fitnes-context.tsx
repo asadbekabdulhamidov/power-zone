@@ -227,6 +227,16 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
           } catch {
             // Fallback to local
           }
+
+          // 4. Sync contact messages from live PostgreSQL
+          try {
+            const messagesRes = await api.messages.getAll();
+            if (Array.isArray(messagesRes) && messagesRes.length > 0) {
+              setContactMessages(messagesRes);
+            }
+          } catch {
+            // Fallback to local
+          }
         }
       } catch {
         // Backend offline or unreachable, local fallback remains active
