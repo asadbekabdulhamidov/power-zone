@@ -42,7 +42,6 @@ export default function AdminLoginPage() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -52,12 +51,6 @@ export default function AdminLoginPage() {
       rememberMe: true,
     },
   });
-
-  const fillDemoCredentials = () => {
-    setValue('login', 'admin', { shouldValidate: true });
-    setValue('password', 'fitnes2026!', { shouldValidate: true });
-    setFormError(null);
-  };
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
@@ -220,16 +213,6 @@ export default function AdminLoginPage() {
               <Sparkles className="w-4 h-4 mr-1 text-zinc-950" />
               <span>Tizimga kirish</span>
             </Button>
-
-            <div className="pt-3 border-t border-zinc-800/80">
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                className="w-full py-2 px-3 rounded-xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-[11px] font-semibold text-zinc-400 hover:text-lime-400 transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-              >
-                <span>⚡ Test uchun: <strong>admin</strong> / <strong>fitnes2026!</strong> bilan to‘ldirish</span>
-              </button>
-            </div>
           </form>
         </div>
 
