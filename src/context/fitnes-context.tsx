@@ -372,8 +372,12 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
             }
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to save member to PostgreSQL server:', err);
+        const errMsg = err instanceof Error ? err.message : 'Serverda a’zoni saqlashda xatolik yuz berdi';
+        showToast(errMsg, 'error');
+        // Rollback optimistic member add
+        setMembers((prev) => prev.filter((m) => m.id !== tempId));
       }
     })();
 
@@ -413,8 +417,10 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         if (token && !id.startsWith('mem-')) {
           await api.members.update(id, data);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to update member on server:', err);
+        const errMsg = err instanceof Error ? err.message : 'A’zo ma’lumotlarini yangilashda xatolik yuz berdi';
+        showToast(errMsg, 'error');
       }
     })();
   };

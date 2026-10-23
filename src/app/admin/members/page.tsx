@@ -134,6 +134,23 @@ export default function MembersPage() {
     [members]
   );
 
+  // Check if phone number is already registered by another member
+  const duplicatePhoneMember = useMemo(() => {
+    const digits = formPhone.replace(/\D/g, '');
+    if (digits.length < 9) return null;
+    const last9 = digits.slice(-9);
+    return members.find((m) => m.phone.replace(/\D/g, '').endsWith(last9));
+  }, [formPhone, members]);
+
+  const duplicatePhoneEditMember = useMemo(() => {
+    const digits = editPhone.replace(/\D/g, '');
+    if (digits.length < 9 || !editingMember) return null;
+    const last9 = digits.slice(-9);
+    return members.find(
+      (m) => m.id !== editingMember.id && m.phone.replace(/\D/g, '').endsWith(last9)
+    );
+  }, [editPhone, members, editingMember]);
+
   // Keyboard Escape listener for zoomed photo
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -433,6 +450,10 @@ export default function MembersPage() {
       setFormError('To‘g‘ri telefon raqamini kiriting');
       return;
     }
+    if (duplicatePhoneMember) {
+      setFormError(`Ushbu telefon raqam allaqachon a’zo "${duplicatePhoneMember.fullName}"ga biriktirilgan!`);
+      return;
+    }
 
     const selectedPlan = plans.find((p) => p.id === formPlanId) || plans[0];
     const duration = selectedPlan.durationDays || 30;
@@ -534,6 +555,10 @@ export default function MembersPage() {
     }
     if (!editPhone || editPhone.trim().length < 9) {
       setEditFormError('To‘g‘ri telefon raqamini kiriting');
+      return;
+    }
+    if (duplicatePhoneEditMember) {
+      setEditFormError(`Ushbu telefon raqam allaqachon boshqa a’zo "${duplicatePhoneEditMember.fullName}"ga biriktirilgan!`);
       return;
     }
 
@@ -1095,6 +1120,7 @@ export default function MembersPage() {
               value={formPhone}
               onChange={(e) => setFormPhone(e.target.value)}
               required
+              error={duplicatePhoneMember ? `⚠️ Ushbu raqam a’zo "${duplicatePhoneMember.fullName}"ga tegishli!` : undefined}
             />
 
             <Select
@@ -1366,7 +1392,11 @@ export default function MembersPage() {
             >
               Bekor qilish
             </Button>
-            <Button type="submit" variant="primary">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={!!duplicatePhoneMember}
+            >
               <Plus className="w-4 h-4" />
               <span>A’zoni Saqlash</span>
             </Button>
@@ -1502,6 +1532,7 @@ export default function MembersPage() {
                 value={editPhone}
                 onChange={(e) => setEditPhone(e.target.value)}
                 required
+                error={duplicatePhoneEditMember ? `⚠️ Ushbu raqam a’zo "${duplicatePhoneEditMember.fullName}"ga tegishli!` : undefined}
               />
 
               <Select
@@ -1740,7 +1771,11 @@ export default function MembersPage() {
               >
                 Bekor qilish
               </Button>
-              <Button type="submit" variant="primary">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={!!duplicatePhoneEditMember}
+              >
                 O‘zgarishlarni Saqlash
               </Button>
             </div>
