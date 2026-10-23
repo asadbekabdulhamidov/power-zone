@@ -80,6 +80,13 @@ This document captures confirmed architectural decisions, technical choices, bus
   2. **Login/Username & Profile Updates**: The settings panel allows modifying the administrator's login username (`username`), email (`email`), phone (`phone`), and full name (`fullName`). These are synchronized with PostgreSQL (`PUT /api/auth/profile`) and updated in local state and browser `localStorage`.
   3. **Multi-Identifier Login**: The login endpoint (`POST /api/auth/login`) dynamically accepts either the admin's username or email along with the current password.
 
+### DEC-017: Two-Way PostgreSQL Website CMS Synchronization & State Persistence
+- **Status**: Confirmed & Implemented
+- **Rule**:
+  1. **Database Schema & DTO Alignment**: Backend `WebsiteContent` model in PostgreSQL is expanded with `heroBackgroundImage`, `bannerImageUrl`, and `featuresJson` to support full landing page customization. `WebsiteService` and `UpdateWebsiteDto` support both nested and flat payload keys.
+  2. **Live Synchronization**: Frontend parses both flat backend columns and structured nested CMS responses (`formatApiWebsiteContent`). All modifications across Hero, Stats, Facilities (Features CRUD), Banner, and Contact/Social media trigger direct authenticated updates (`PUT /api/website`).
+  3. **Admin Form Synchronization**: `/admin/website` features reactive `useEffect` synchronization to prevent stale inputs from overwriting live database records, complete with asynchronous save state indicators (`isLoading`).
+
 ---
 
 ## 3. Proposals Pending Approval

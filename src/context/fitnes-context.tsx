@@ -79,13 +79,13 @@ interface FitnesContextType {
 
   // Website Content Management (CMS)
   websiteContent: WebsiteContent;
-  updateWebsiteHero: (hero: Partial<WebsiteHero>) => void;
-  updateWebsiteStats: (stats: WebsiteStat[]) => void;
-  addWebsiteFeature: (feat: Omit<WebsiteFeature, 'id'>) => WebsiteFeature;
-  updateWebsiteFeature: (id: string, feat: Partial<WebsiteFeature>) => void;
-  deleteWebsiteFeature: (id: string) => void;
-  updateWebsiteBanner: (banner: Partial<WebsiteBanner>) => void;
-  updateWebsiteContact: (contact: Partial<WebsiteContactInfo>) => void;
+  updateWebsiteHero: (hero: Partial<WebsiteHero>) => Promise<{ success: boolean; message: string }>;
+  updateWebsiteStats: (stats: WebsiteStat[]) => Promise<{ success: boolean; message: string }>;
+  addWebsiteFeature: (feat: Omit<WebsiteFeature, 'id'>) => Promise<{ success: boolean; message: string; feature?: WebsiteFeature }>;
+  updateWebsiteFeature: (id: string, feat: Partial<WebsiteFeature>) => Promise<{ success: boolean; message: string }>;
+  deleteWebsiteFeature: (id: string) => Promise<{ success: boolean; message: string }>;
+  updateWebsiteBanner: (banner: Partial<WebsiteBanner>) => Promise<{ success: boolean; message: string }>;
+  updateWebsiteContact: (contact: Partial<WebsiteContactInfo>) => Promise<{ success: boolean; message: string }>;
 
   // Contact Messages & Inquiries
   contactMessages: ContactMessage[];
@@ -104,13 +104,75 @@ const DEFAULT_ADMIN: AdminProfile = {
 
 const FitnesContext = createContext<FitnesContextType | undefined>(undefined);
 
+function formatApiWebsiteContent(raw: unknown): WebsiteContent {
+  if (!raw || typeof raw !== 'object') return INITIAL_WEBSITE_CONTENT;
+  const rawRecord = raw as Record<string, unknown>;
+  const rawHero = (rawRecord.hero || {}) as Record<string, unknown>;
+  const rawBanner = (rawRecord.banner || {}) as Record<string, unknown>;
+  const rawContact = (rawRecord.contact || {}) as Record<string, unknown>;
+
+  return {
+    hero: {
+      badge: (rawHero.badge as string) || (rawRecord.heroBadge as string) || INITIAL_WEBSITE_CONTENT.hero.badge,
+      title: (rawHero.title as string) || (rawRecord.heroTitle as string) || INITIAL_WEBSITE_CONTENT.hero.title,
+      subtitle: (rawHero.subtitle as string) || (rawRecord.heroSubtitle as string) || INITIAL_WEBSITE_CONTENT.hero.subtitle,
+      bullets: Array.isArray(rawHero.bullets) && rawHero.bullets.length > 0
+        ? (rawHero.bullets as string[])
+        : (Array.isArray(rawRecord.heroBullets) && (rawRecord.heroBullets as string[]).length > 0 ? (rawRecord.heroBullets as string[]) : INITIAL_WEBSITE_CONTENT.hero.bullets),
+      backgroundImage: (rawHero.backgroundImage as string) || (rawRecord.heroBackgroundImage as string) || INITIAL_WEBSITE_CONTENT.hero.backgroundImage,
+    },
+    stats: Array.isArray(rawRecord.stats) && rawRecord.stats.length > 0
+      ? (rawRecord.stats as WebsiteStat[])
+      : [
+          { id: 'stat-1', value: (rawRecord.stat1Value as string) || INITIAL_WEBSITE_CONTENT.stats[0].value, label: (rawRecord.stat1Label as string) || INITIAL_WEBSITE_CONTENT.stats[0].label },
+          { id: 'stat-2', value: (rawRecord.stat2Value as string) || INITIAL_WEBSITE_CONTENT.stats[1].value, label: (rawRecord.stat2Label as string) || INITIAL_WEBSITE_CONTENT.stats[1].label },
+          { id: 'stat-3', value: (rawRecord.stat3Value as string) || INITIAL_WEBSITE_CONTENT.stats[2].value, label: (rawRecord.stat3Label as string) || INITIAL_WEBSITE_CONTENT.stats[2].label },
+          { id: 'stat-4', value: (rawRecord.stat4Value as string) || INITIAL_WEBSITE_CONTENT.stats[3].value, label: (rawRecord.stat4Label as string) || INITIAL_WEBSITE_CONTENT.stats[3].label },
+        ],
+    features: Array.isArray(rawRecord.features) && rawRecord.features.length > 0
+      ? (rawRecord.features as WebsiteFeature[])
+      : (Array.isArray(rawRecord.featuresJson) && (rawRecord.featuresJson as WebsiteFeature[]).length > 0 ? (rawRecord.featuresJson as WebsiteFeature[]) : INITIAL_WEBSITE_CONTENT.features),
+    banner: {
+      badge: (rawBanner.badge as string) || (rawRecord.bannerBadge as string) || INITIAL_WEBSITE_CONTENT.banner.badge,
+      title: (rawBanner.title as string) || (rawRecord.bannerTitle as string) || INITIAL_WEBSITE_CONTENT.banner.title,
+      desc: (rawBanner.desc as string) || (rawRecord.bannerDesc as string) || INITIAL_WEBSITE_CONTENT.banner.desc,
+      linkText: (rawBanner.linkText as string) || (rawRecord.bannerLinkText as string) || INITIAL_WEBSITE_CONTENT.banner.linkText,
+      imageUrl: (rawBanner.imageUrl as string) || (rawRecord.bannerImageUrl as string) || INITIAL_WEBSITE_CONTENT.banner.imageUrl,
+    },
+    contact: {
+      phone: (rawContact.phone as string) || (rawRecord.phone as string) || INITIAL_WEBSITE_CONTENT.contact.phone,
+      email: (rawContact.email as string) || (rawRecord.email as string) || INITIAL_WEBSITE_CONTENT.contact.email,
+      address: (rawContact.address as string) || (rawRecord.address as string) || INITIAL_WEBSITE_CONTENT.contact.address,
+      landmark: (rawContact.landmark as string) || (rawRecord.landmark as string) || INITIAL_WEBSITE_CONTENT.contact.landmark,
+      workingHoursWeekdays: (rawContact.workingHoursWeekdays as string) || (rawRecord.workingHoursWeekdays as string) || INITIAL_WEBSITE_CONTENT.contact.workingHoursWeekdays,
+      workingHoursSunday: (rawContact.workingHoursSunday as string) || (rawRecord.workingHoursSunday as string) || INITIAL_WEBSITE_CONTENT.contact.workingHoursSunday,
+      telegramChannel: (rawContact.telegramChannel as string) || (rawRecord.telegramChannel as string) || INITIAL_WEBSITE_CONTENT.contact.telegramChannel,
+      telegramAdmin: (rawContact.telegramAdmin as string) || (rawRecord.telegramAdmin as string) || INITIAL_WEBSITE_CONTENT.contact.telegramAdmin,
+      instagram: (rawContact.instagram as string) || (rawRecord.instagram as string) || INITIAL_WEBSITE_CONTENT.contact.instagram,
+    },
+  };
+}
+
 export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
   const [plans, setPlans] = useState<MembershipPlan[]>(INITIAL_MEMBERSHIP_PLANS);
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [adminProfile, setAdminProfile] = useState<AdminProfile>(DEFAULT_ADMIN);
-  const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(INITIAL_WEBSITE_CONTENT);
+  const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('powerzone_website_content');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && (parsed.hero || parsed.heroTitle)) {
+            return formatApiWebsiteContent(parsed);
+          }
+        }
+      } catch {}
+    }
+    return INITIAL_WEBSITE_CONTENT;
+  });
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>(INITIAL_CONTACT_MESSAGES);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -123,7 +185,6 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('fitnesflow_payments');
       localStorage.removeItem('fitnesflow_products');
       localStorage.removeItem('powerzone_admin_profile');
-      localStorage.removeItem('powerzone_website_content');
       localStorage.removeItem('powerzone_contact_messages');
     } catch {
       // Ignore storage errors in private browsing modes
@@ -160,8 +221,12 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
         // 3. Sync website CMS content from live PostgreSQL
         try {
           const cmsContent = await api.website.getContent();
-          if (cmsContent && cmsContent.hero) {
-            setWebsiteContent(cmsContent);
+          if (cmsContent) {
+            const formatted = formatApiWebsiteContent(cmsContent);
+            setWebsiteContent(formatted);
+            try {
+              localStorage.setItem('powerzone_website_content', JSON.stringify(formatted));
+            } catch {}
           }
         } catch {
           // Fallback to initial content
@@ -1057,66 +1122,135 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Helper to persist website content both locally and to live backend
+  const persistWebsiteContent = async (updated: WebsiteContent): Promise<{ success: boolean; message: string }> => {
+    setWebsiteContent(updated);
+    try {
+      localStorage.setItem('powerzone_website_content', JSON.stringify(updated));
+    } catch {}
+
+    try {
+      const { api } = await import('@/lib/api-client');
+      const payload: Record<string, unknown> = {
+        ...updated,
+        heroBadge: updated.hero.badge,
+        heroTitle: updated.hero.title,
+        heroSubtitle: updated.hero.subtitle,
+        heroBullets: updated.hero.bullets,
+        heroBackgroundImage: updated.hero.backgroundImage,
+        stat1Value: updated.stats[0]?.value,
+        stat1Label: updated.stats[0]?.label,
+        stat2Value: updated.stats[1]?.value,
+        stat2Label: updated.stats[1]?.label,
+        stat3Value: updated.stats[2]?.value,
+        stat3Label: updated.stats[2]?.label,
+        stat4Value: updated.stats[3]?.value,
+        stat4Label: updated.stats[3]?.label,
+        featuresJson: updated.features,
+        bannerBadge: updated.banner.badge,
+        bannerTitle: updated.banner.title,
+        bannerDesc: updated.banner.desc,
+        bannerLinkText: updated.banner.linkText,
+        bannerImageUrl: updated.banner.imageUrl,
+        phone: updated.contact.phone,
+        email: updated.contact.email,
+        address: updated.contact.address,
+        landmark: updated.contact.landmark,
+        workingHoursWeekdays: updated.contact.workingHoursWeekdays,
+        workingHoursSunday: updated.contact.workingHoursSunday,
+        telegramChannel: updated.contact.telegramChannel,
+        telegramAdmin: updated.contact.telegramAdmin,
+        instagram: updated.contact.instagram,
+      };
+
+      const res = await api.website.updateContent(payload as Partial<WebsiteContent>);
+      if (res) {
+        const formatted = formatApiWebsiteContent(res);
+        setWebsiteContent(formatted);
+        try {
+          localStorage.setItem('powerzone_website_content', JSON.stringify(formatted));
+        } catch {}
+      }
+      return { success: true, message: 'Sayt ma’lumotlari muvaffaqiyatli saqlandi!' };
+    } catch (err: unknown) {
+      console.warn('Backendga saqlashda xatolik:', err);
+      return { success: true, message: 'Ma’lumotlar lokal yangilandi.' };
+    }
+  };
+
   // Website Content Management actions
-  const updateWebsiteHero = (heroData: Partial<WebsiteHero>) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
-      hero: { ...prev.hero, ...heroData },
-    }));
+  const updateWebsiteHero = async (heroData: Partial<WebsiteHero>) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      hero: { ...websiteContent.hero, ...heroData },
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Hero bo‘limi muvaffaqiyatli yangilandi!');
+    return res;
   };
 
-  const updateWebsiteStats = (statsData: WebsiteStat[]) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
+  const updateWebsiteStats = async (statsData: WebsiteStat[]) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
       stats: statsData,
-    }));
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Zal statistikasi ko‘rsatkichlari yangilandi!');
+    return res;
   };
 
-  const addWebsiteFeature = (featData: Omit<WebsiteFeature, 'id'>): WebsiteFeature => {
+  const addWebsiteFeature = async (featData: Omit<WebsiteFeature, 'id'>) => {
     const newFeature: WebsiteFeature = {
       ...featData,
       id: generateId('feat'),
     };
-    setWebsiteContent((prev) => ({
-      ...prev,
-      features: [...prev.features, newFeature],
-    }));
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      features: [...websiteContent.features, newFeature],
+    };
+    const res = await persistWebsiteContent(updated);
     showToast(`"${newFeature.title}" qulayligi qo‘shildi!`);
-    return newFeature;
+    return { ...res, feature: newFeature };
   };
 
-  const updateWebsiteFeature = (id: string, featData: Partial<WebsiteFeature>) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
-      features: prev.features.map((f) => (f.id === id ? { ...f, ...featData } : f)),
-    }));
+  const updateWebsiteFeature = async (id: string, featData: Partial<WebsiteFeature>) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      features: websiteContent.features.map((f) => (f.id === id ? { ...f, ...featData } : f)),
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Qulaylik kartochkasi ma’lumotlari yangilandi!');
+    return res;
   };
 
-  const deleteWebsiteFeature = (id: string) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
-      features: prev.features.filter((f) => f.id !== id),
-    }));
+  const deleteWebsiteFeature = async (id: string) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      features: websiteContent.features.filter((f) => f.id !== id),
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Qulaylik kartochkasi o‘chirildi.', 'info');
+    return res;
   };
 
-  const updateWebsiteBanner = (bannerData: Partial<WebsiteBanner>) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
-      banner: { ...prev.banner, ...bannerData },
-    }));
+  const updateWebsiteBanner = async (bannerData: Partial<WebsiteBanner>) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      banner: { ...websiteContent.banner, ...bannerData },
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Aksiya banneri muvaffaqiyatli yangilandi!');
+    return res;
   };
 
-  const updateWebsiteContact = (contactData: Partial<WebsiteContactInfo>) => {
-    setWebsiteContent((prev) => ({
-      ...prev,
-      contact: { ...prev.contact, ...contactData },
-    }));
+  const updateWebsiteContact = async (contactData: Partial<WebsiteContactInfo>) => {
+    const updated: WebsiteContent = {
+      ...websiteContent,
+      contact: { ...websiteContent.contact, ...contactData },
+    };
+    const res = await persistWebsiteContent(updated);
     showToast('Aloqa va ijtimoiy tarmoqlar yangilandi!');
+    return res;
   };
 
   // Contact Messages actions

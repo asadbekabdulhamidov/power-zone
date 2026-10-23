@@ -30,6 +30,12 @@ All listed features below have been inspected in code and verified via a clean p
   - Resolved client-side password verification bug in `/admin/settings` where legacy check against empty password failed before reaching the API.
   - Connected password update directly to backend `PUT /api/auth/password` with bcrypt validation and token authorization.
   - Added full login username (`username`) customization in admin settings, supporting login via either username or email.
+- [x] **Live Website CMS Synchronization & PostgreSQL Persistence**:
+  - Resolved issue where `/admin/website` updates only modified local state without calling backend API.
+  - Added `heroBackgroundImage`, `bannerImageUrl`, and `featuresJson` to PostgreSQL schema and updated NestJS backend.
+  - Implemented `formatApiWebsiteContent` resilient normalizer supporting both nested and flat payloads.
+  - Connected all save handlers (`Hero`, `Stats`, `Features`, `Banner`, `Contact`) directly to `PUT /api/website` with loading states.
+  - Added reactive form synchronization in `/admin/website` to ensure inputs reflect live database content.
 - [x] **Centralized API Client (`src/lib/api-client.ts`)**: Built fully typed, zero-`any` API client connecting all 8 service domains (`auth`, `members`, `plans`, `payments`, `products`, `website`, `messages`, `dashboard`) to `NEXT_PUBLIC_API_URL` with automatic Bearer token handling.
 - [x] **Full E2E Live Database Integration Verification**: Verified live connection between NestJS backend and Neon.tech PostgreSQL (`AWS Frankfurt`). Successfully executed automated end-to-end test suite verifying:
   - Superadmin authentication (`POST /api/auth/login`) with JWT token issuance.

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Globe,
@@ -86,6 +86,47 @@ export default function WebsiteAdminPage() {
   const [telegramAdmin, setTelegramAdmin] = useState(websiteContent.contact.telegramAdmin);
   const [instagram, setInstagram] = useState(websiteContent.contact.instagram);
 
+  // Loading states
+  const [isSavingHero, setIsSavingHero] = useState(false);
+  const [isSavingStats, setIsSavingStats] = useState(false);
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+  const [isSavingContact, setIsSavingContact] = useState(false);
+  const [isSavingFeature, setIsSavingFeature] = useState(false);
+
+  // Synchronize form states when websiteContent updates or loads from API
+  useEffect(() => {
+    if (websiteContent) {
+      if (websiteContent.hero) {
+        setHeroBadge(websiteContent.hero.badge || '');
+        setHeroTitle(websiteContent.hero.title || '');
+        setHeroSubtitle(websiteContent.hero.subtitle || '');
+        setHeroBullets(Array.isArray(websiteContent.hero.bullets) ? [...websiteContent.hero.bullets] : []);
+        setHeroBgImage(websiteContent.hero.backgroundImage || '/images/hero/hero-bg.webp');
+      }
+      if (Array.isArray(websiteContent.stats) && websiteContent.stats.length > 0) {
+        setStatsData([...websiteContent.stats]);
+      }
+      if (websiteContent.banner) {
+        setBannerBadge(websiteContent.banner.badge || '');
+        setBannerTitle(websiteContent.banner.title || '');
+        setBannerDesc(websiteContent.banner.desc || '');
+        setBannerLinkText(websiteContent.banner.linkText || '');
+        setBannerImageUrl(websiteContent.banner.imageUrl || '/images/about/coach-training.webp');
+      }
+      if (websiteContent.contact) {
+        setContactPhone(websiteContent.contact.phone || '');
+        setContactEmail(websiteContent.contact.email || '');
+        setContactAddress(websiteContent.contact.address || '');
+        setContactLandmark(websiteContent.contact.landmark || '');
+        setWorkingWeekdays(websiteContent.contact.workingHoursWeekdays || '');
+        setWorkingSunday(websiteContent.contact.workingHoursSunday || '');
+        setTelegramChannel(websiteContent.contact.telegramChannel || '');
+        setTelegramAdmin(websiteContent.contact.telegramAdmin || '');
+        setInstagram(websiteContent.contact.instagram || '');
+      }
+    }
+  }, [websiteContent]);
+
   // Feature Modals
   const [isAddFeatureOpen, setIsAddFeatureOpen] = useState(false);
   const [editingFeature, setEditingFeature] = useState<WebsiteFeature | null>(null);
@@ -96,15 +137,20 @@ export default function WebsiteAdminPage() {
   const [featIcon, setFeatIcon] = useState<WebsiteFeature['iconName']>('Dumbbell');
 
   // Handle Hero Save
-  const handleHeroSave = (e: React.FormEvent) => {
+  const handleHeroSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateWebsiteHero({
-      badge: heroBadge.trim(),
-      title: heroTitle.trim(),
-      subtitle: heroSubtitle.trim(),
-      bullets: heroBullets.filter((b) => b.trim().length > 0),
-      backgroundImage: heroBgImage.trim() || '/images/hero/hero-bg.webp',
-    });
+    setIsSavingHero(true);
+    try {
+      await updateWebsiteHero({
+        badge: heroBadge.trim(),
+        title: heroTitle.trim(),
+        subtitle: heroSubtitle.trim(),
+        bullets: heroBullets.filter((b) => b.trim().length > 0),
+        backgroundImage: heroBgImage.trim() || '/images/hero/hero-bg.webp',
+      });
+    } finally {
+      setIsSavingHero(false);
+    }
   };
 
   // Handle Hero Bullet changes
@@ -124,9 +170,14 @@ export default function WebsiteAdminPage() {
   };
 
   // Handle Stats Save
-  const handleStatsSave = (e: React.FormEvent) => {
+  const handleStatsSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateWebsiteStats(statsData);
+    setIsSavingStats(true);
+    try {
+      await updateWebsiteStats(statsData);
+    } finally {
+      setIsSavingStats(false);
+    }
   };
 
   const handleStatChange = (id: string, field: 'value' | 'label', val: string) => {
@@ -136,62 +187,82 @@ export default function WebsiteAdminPage() {
   };
 
   // Handle Feature Add
-  const handleAddFeatureSubmit = (e: React.FormEvent) => {
+  const handleAddFeatureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!featTitle.trim()) return;
 
-    addWebsiteFeature({
-      title: featTitle.trim(),
-      desc: featDesc.trim(),
-      iconName: featIcon,
-    });
+    setIsSavingFeature(true);
+    try {
+      await addWebsiteFeature({
+        title: featTitle.trim(),
+        desc: featDesc.trim(),
+        iconName: featIcon,
+      });
 
-    setFeatTitle('');
-    setFeatDesc('');
-    setFeatIcon('Dumbbell');
-    setIsAddFeatureOpen(false);
+      setFeatTitle('');
+      setFeatDesc('');
+      setFeatIcon('Dumbbell');
+      setIsAddFeatureOpen(false);
+    } finally {
+      setIsSavingFeature(false);
+    }
   };
 
   // Handle Feature Edit
-  const handleEditFeatureSubmit = (e: React.FormEvent) => {
+  const handleEditFeatureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFeature) return;
 
-    updateWebsiteFeature(editingFeature.id, {
-      title: editingFeature.title.trim(),
-      desc: editingFeature.desc.trim(),
-      iconName: editingFeature.iconName,
-    });
+    setIsSavingFeature(true);
+    try {
+      await updateWebsiteFeature(editingFeature.id, {
+        title: editingFeature.title.trim(),
+        desc: editingFeature.desc.trim(),
+        iconName: editingFeature.iconName,
+      });
 
-    setEditingFeature(null);
+      setEditingFeature(null);
+    } finally {
+      setIsSavingFeature(false);
+    }
   };
 
   // Handle Banner Save
-  const handleBannerSave = (e: React.FormEvent) => {
+  const handleBannerSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateWebsiteBanner({
-      badge: bannerBadge.trim(),
-      title: bannerTitle.trim(),
-      desc: bannerDesc.trim(),
-      linkText: bannerLinkText.trim(),
-      imageUrl: bannerImageUrl.trim() || '/images/about/coach-training.webp',
-    });
+    setIsSavingBanner(true);
+    try {
+      await updateWebsiteBanner({
+        badge: bannerBadge.trim(),
+        title: bannerTitle.trim(),
+        desc: bannerDesc.trim(),
+        linkText: bannerLinkText.trim(),
+        imageUrl: bannerImageUrl.trim() || '/images/about/coach-training.webp',
+      });
+    } finally {
+      setIsSavingBanner(false);
+    }
   };
 
   // Handle Contact Save
-  const handleContactSave = (e: React.FormEvent) => {
+  const handleContactSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateWebsiteContact({
-      phone: contactPhone.trim(),
-      email: contactEmail.trim(),
-      address: contactAddress.trim(),
-      landmark: contactLandmark.trim(),
-      workingHoursWeekdays: workingWeekdays.trim(),
-      workingHoursSunday: workingSunday.trim(),
-      telegramChannel: telegramChannel.trim(),
-      telegramAdmin: telegramAdmin.trim(),
-      instagram: instagram.trim(),
-    });
+    setIsSavingContact(true);
+    try {
+      await updateWebsiteContact({
+        phone: contactPhone.trim(),
+        email: contactEmail.trim(),
+        address: contactAddress.trim(),
+        landmark: contactLandmark.trim(),
+        workingHoursWeekdays: workingWeekdays.trim(),
+        workingHoursSunday: workingSunday.trim(),
+        telegramChannel: telegramChannel.trim(),
+        telegramAdmin: telegramAdmin.trim(),
+        instagram: instagram.trim(),
+      });
+    } finally {
+      setIsSavingContact(false);
+    }
   };
 
   return (
@@ -366,7 +437,7 @@ export default function WebsiteAdminPage() {
               </div>
 
               <div className="pt-4 border-t border-zinc-800">
-                <Button type="submit" variant="lime" size="md">
+                <Button type="submit" variant="lime" size="md" isLoading={isSavingHero}>
                   <Save className="w-4 h-4 mr-1.5" />
                   <span>Hero Ma’lumotlarini Saqlash</span>
                 </Button>
@@ -428,7 +499,7 @@ export default function WebsiteAdminPage() {
               </div>
 
               <div className="pt-2">
-                <Button type="submit" variant="lime" size="md">
+                <Button type="submit" variant="lime" size="md" isLoading={isSavingStats}>
                   <Save className="w-4 h-4 mr-1.5" />
                   <span>Statistikani Yangilash</span>
                 </Button>
@@ -594,7 +665,7 @@ export default function WebsiteAdminPage() {
               </div>
 
               <div className="pt-2">
-                <Button type="submit" variant="lime" size="md">
+                <Button type="submit" variant="lime" size="md" isLoading={isSavingBanner}>
                   <Save className="w-4 h-4 mr-1.5" />
                   <span>Banner Ma’lumotlarini Saqlash</span>
                 </Button>
@@ -734,7 +805,7 @@ export default function WebsiteAdminPage() {
               </div>
 
               <div className="pt-2">
-                <Button type="submit" variant="lime" size="md">
+                <Button type="submit" variant="lime" size="md" isLoading={isSavingContact}>
                   <Save className="w-4 h-4 mr-1.5" />
                   <span>Aloqa Rekvizitlarini Saqlash</span>
                 </Button>
@@ -813,7 +884,7 @@ export default function WebsiteAdminPage() {
             >
               Bekor qilish
             </Button>
-            <Button type="submit" variant="lime" size="sm">
+            <Button type="submit" variant="lime" size="sm" isLoading={isSavingFeature}>
               Qo‘shish
             </Button>
           </div>
@@ -894,7 +965,7 @@ export default function WebsiteAdminPage() {
               >
                 Bekor qilish
               </Button>
-              <Button type="submit" variant="lime" size="sm">
+              <Button type="submit" variant="lime" size="sm" isLoading={isSavingFeature}>
                 Saqlash
               </Button>
             </div>
