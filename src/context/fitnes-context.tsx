@@ -74,8 +74,8 @@ interface FitnesContextType {
 
   // Admin Profile & Security
   adminProfile: AdminProfile;
-  updateAdminPassword: (currentPass: string, newPass: string) => { success: boolean; message: string };
-  updateAdminProfile: (data: Partial<AdminProfile>) => void;
+  updateAdminPassword: (currentPass: string, newPass: string) => Promise<{ success: boolean; message: string }>;
+  updateAdminProfile: (data: Partial<AdminProfile>) => Promise<{ success: boolean; message: string }>;
 
   // Website Content Management (CMS)
   websiteContent: WebsiteContent;
@@ -95,11 +95,11 @@ interface FitnesContextType {
 }
 
 const DEFAULT_ADMIN: AdminProfile = {
-  fullName: 'Administrator',
-  email: 'admin@powerzone.uz',
+  fullName: 'Power Zone Admin',
+  email: 'admin@fitnesflow.uz',
+  username: 'admin',
   phone: '+998 (90) 123-45-67',
   role: 'Bosh Administrator',
-  password: '',
 };
 
 const FitnesContext = createContext<FitnesContextType | undefined>(undefined);
@@ -175,10 +175,12 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
             if (me) {
               setAdminProfile((prev) => ({
                 ...prev,
+                id: me.id,
                 fullName: me.fullName || prev.fullName,
                 email: me.email || prev.email,
+                username: me.username || prev.username || 'admin',
                 phone: me.phone || prev.phone,
-                role: me.role === 'SUPERADMIN' ? 'Bosh Administrator' : (me.role || prev.role),
+                role: me.role === 'SUPERADMIN' || me.role === 'ADMIN' ? 'Bosh Administrator' : (me.role || prev.role),
               }));
             }
           } catch {
@@ -963,55 +965,96 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     showToast('Barcha mahsulotlar va rasmlar yangilandi!', 'success');
   };
 
-  const updateAdminPassword = (currentPass: string, newPass: string): { success: boolean; message: string } => {
-    if (currentPass !== adminProfile.password) {
-      showToast('Joriy parol noto‘g‘ri kiritildi!', 'error');
-      return { success: false, message: 'Joriy parol noto‘g‘ri kiritildi!' };
+  const updateAdminPassword = async (
+    currentPass: string,
+    newPass: string
+  ): Promise<{ success: boolean; message: string }> => {
+    if (!currentPass) {
+      const msg = 'Joriy parolni kiriting!';
+      showToast(msg, 'error');
+      return { success: false, message: msg };
     }
     if (!newPass || newPass.length < 6) {
-      showToast('Yangi parol kamida 6 ta belgidan iborat bo‘lishi shart!', 'error');
-      return { success: false, message: 'Yangi parol kamida 6 ta belgidan iborat bo‘lishi shart!' };
+      const msg = 'Yangi parol kamida 6 ta belgidan iborat bo‘lishi shart!';
+      showToast(msg, 'error');
+      return { success: false, message: msg };
     }
-    const updated = { ...adminProfile, password: newPass };
-    setAdminProfile(updated);
 
-    (async () => {
-      try {
-        const { api } = await import('@/lib/api-client');
-        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
-        if (token) {
-          await api.auth.updatePassword({ currentPassword: currentPass, newPassword: newPass });
-        }
-      } catch (err) {
-        console.error('Failed to update password on server:', err);
-      }
-    })();
+    try {
+      const { api } = await import('@/lib/api-client');
+      const res = await api.auth.updatePassword({
+        currentPassword: currentPass,
+        newPassword: newPass,
+      });
 
-    showToast('Admin paroli muvaffaqiyatli almashtirildi!', 'success');
-    return { success: true, message: 'Admin paroli muvaffaqiyatli almashtirildi!' };
+      const successMsg = res?.message || 'Admin paroli muvaffaqiyatli almashtirildi!';
+      showToast(successMsg, 'success');
+      return { success: true, message: successMsg };
+    } catch (err: unknown) {
+      console.error('Password change error:', err);
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : 'Joriy parol noto‘g‘ri yoki serverda xatolik yuz berdi';
+      showToast(errMsg, 'error');
+      return { success: false, message: errMsg };
+    }
   };
 
-  const updateAdminProfile = (data: Partial<AdminProfile>) => {
-    const updated = { ...adminProfile, ...data };
-    setAdminProfile(updated);
+  const updateAdminProfile = async (
+    data: Partial<AdminProfile>
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { api } = await import('@/lib/api-client');
+      const payload = {
+        fullName: data.fullName !== undefined ? data.fullName : adminProfile.fullName,
+        email: data.email !== undefined ? data.email : adminProfile.email,
+        phone: data.phone !== undefined ? data.phone : adminProfile.phone,
+        ...(data.username !== undefined ? { username: data.username } : {}),
+      };
 
-    (async () => {
-      try {
-        const { api } = await import('@/lib/api-client');
-        const token = typeof window !== 'undefined' ? localStorage.getItem('powerzone_token') : null;
-        if (token) {
-          await api.auth.updateProfile({
-            fullName: updated.fullName,
-            email: updated.email,
-            phone: updated.phone,
-          });
+      const updated = await api.auth.updateProfile(payload);
+
+      setAdminProfile((prev) => ({
+        ...prev,
+        fullName: updated.fullName || prev.fullName,
+        email: updated.email || prev.email,
+        username: updated.username || prev.username,
+        phone: updated.phone || prev.phone,
+      }));
+
+      // Update cached user in localStorage
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('powerzone_user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            localStorage.setItem(
+              'powerzone_user',
+              JSON.stringify({
+                ...parsed,
+                fullName: updated.fullName || parsed.fullName,
+                email: updated.email || parsed.email,
+                username: updated.username || parsed.username,
+                phone: updated.phone || parsed.phone,
+              })
+            );
+          } catch {
+            // ignore
+          }
         }
-      } catch (err) {
-        console.error('Failed to update admin profile on server:', err);
       }
-    })();
 
-    showToast('Admin profili ma’lumotlari yangilandi!', 'success');
+      const successMsg = 'Admin profili va login ma’lumotlari muvaffaqiyatli yangilandi!';
+      showToast(successMsg, 'success');
+      return { success: true, message: successMsg };
+    } catch (err: unknown) {
+      console.error('Profile update error:', err);
+      const errMsg =
+        err instanceof Error ? err.message : 'Admin profilini yangilashda xatolik yuz berdi';
+      showToast(errMsg, 'error');
+      return { success: false, message: errMsg };
+    }
   };
 
   // Website Content Management actions

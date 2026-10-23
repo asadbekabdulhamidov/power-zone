@@ -26,6 +26,10 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Swagger & OpenAPI Audit**: Inspected live NestJS Swagger specification (`http://localhost:4000/api/docs`) verifying 23 endpoints across Auth, Members, Plans, Payments, Products, Messages, Website CMS, and Dashboard analytics.
 - [x] **QA Defect Identification & Payload Limit Fix**: Identified critical 413 Payload Too Large error when uploading member/product photos (default body-parser limit of 100KB). Fixed in `power-backend/src/main.ts` with `json({ limit: '50mb' })` and `urlencoded({ limit: '50mb' })`.
 - [x] **Client-Side Image Optimization (`compressImageFile`)**: Implemented browser-side canvas resizing in `src/lib/image-util.ts` to automatically resize images to 800px max width and compress to ~150-250KB JPEG, protecting network bandwidth and database storage.
+- [x] **Server-Side Password & Admin Profile Management**:
+  - Resolved client-side password verification bug in `/admin/settings` where legacy check against empty password failed before reaching the API.
+  - Connected password update directly to backend `PUT /api/auth/password` with bcrypt validation and token authorization.
+  - Added full login username (`username`) customization in admin settings, supporting login via either username or email.
 - [x] **Centralized API Client (`src/lib/api-client.ts`)**: Built fully typed, zero-`any` API client connecting all 8 service domains (`auth`, `members`, `plans`, `payments`, `products`, `website`, `messages`, `dashboard`) to `NEXT_PUBLIC_API_URL` with automatic Bearer token handling.
 - [x] **Full E2E Live Database Integration Verification**: Verified live connection between NestJS backend and Neon.tech PostgreSQL (`AWS Frankfurt`). Successfully executed automated end-to-end test suite verifying:
   - Superadmin authentication (`POST /api/auth/login`) with JWT token issuance.

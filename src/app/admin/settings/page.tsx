@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Building2,
   Save,
+  AtSign,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,11 +39,25 @@ export default function AdminSettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Profile edit state
-  const [fullName, setFullName] = useState(adminProfile.fullName);
-  const [email, setEmail] = useState(adminProfile.email);
-  const [phone, setPhone] = useState(adminProfile.phone);
+  const [fullName, setFullName] = useState(adminProfile.fullName || '');
+  const [email, setEmail] = useState(adminProfile.email || '');
+  const [username, setUsername] = useState(adminProfile.username || 'admin');
+  const [phone, setPhone] = useState(adminProfile.phone || '');
+  const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  // Sync with live server adminProfile once loaded
+  React.useEffect(() => {
+    if (adminProfile) {
+      setFullName(adminProfile.fullName || '');
+      setEmail(adminProfile.email || '');
+      setUsername(adminProfile.username || 'admin');
+      setPhone(adminProfile.phone || '');
+    }
+  }, [adminProfile]);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
     setPasswordSuccess(null);
@@ -68,29 +83,43 @@ export default function AdminSettingsPage() {
     }
 
     setIsSubmitting(true);
+    const result = await updateAdminPassword(currentPassword, newPassword);
+    setIsSubmitting(false);
 
-    setTimeout(() => {
-      const result = updateAdminPassword(currentPassword, newPassword);
-      setIsSubmitting(false);
-
-      if (result.success) {
-        setPasswordSuccess('Parol muvaffaqiyatli almashtirildi! Yangi parol kuchga kirdi.');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        setPasswordError(result.message);
-      }
-    }, 400);
+    if (result.success) {
+      setPasswordSuccess(result.message);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } else {
+      setPasswordError(result.message);
+    }
   };
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateAdminProfile({
+    setProfileSuccess(null);
+    setProfileError(null);
+
+    if (!username.trim() || username.trim().length < 3) {
+      setProfileError('Tizim logini (username) kamida 3 ta belgidan iborat bo‘lishi shart');
+      return;
+    }
+
+    setIsProfileSubmitting(true);
+    const res = await updateAdminProfile({
       fullName: fullName.trim(),
+      username: username.trim(),
       email: email.trim(),
       phone: phone.trim(),
     });
+    setIsProfileSubmitting(false);
+
+    if (res.success) {
+      setProfileSuccess(res.message);
+    } else {
+      setProfileError(res.message);
+    }
   };
 
   return (
@@ -280,6 +309,29 @@ export default function AdminSettingsPage() {
 
             <CardContent className="p-6">
               <form onSubmit={handleProfileSave} className="space-y-4">
+                {profileError && (
+                  <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{profileError}</span>
+                  </div>
+                )}
+                {profileSuccess && (
+                  <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{profileSuccess}</span>
+                  </div>
+                )}
+
+                <Input
+                  label="Tizim Logini (Username)"
+                  placeholder="Masalan: admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                  leftIcon={<AtSign className="w-4 h-4 text-zinc-500" />}
+                  helperText="Tizimga kirish uchun asosiy login identifikatori"
+                  required
+                />
+
                 <Input
                   label="To‘liq Ism"
                   value={fullName}
@@ -293,6 +345,7 @@ export default function AdminSettingsPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   leftIcon={<Mail className="w-4 h-4 text-zinc-500" />}
+                  helperText="Tizimga kirish uchun ikkilamchi login sifatida ham ishlatiladi"
                   required
                 />
 
@@ -312,9 +365,15 @@ export default function AdminSettingsPage() {
                   </span>
                 </div>
 
-                <Button type="submit" variant="secondary" size="sm" className="w-full">
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  isLoading={isProfileSubmitting}
+                >
                   <Save className="w-3.5 h-3.5 mr-1" />
-                  <span>Profil Ma’lumotlarini Yangilash</span>
+                  <span>Login va Profilni Yangilash</span>
                 </Button>
               </form>
             </CardContent>

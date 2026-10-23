@@ -103,11 +103,13 @@ export interface DashboardStats {
 }
 
 export interface AdminProfile {
+  id?: string;
   fullName: string;
   email: string;
+  username?: string;
   phone: string;
   role: string;
-  password: string;
+  password?: string;
 }
 
 export interface WebsiteFeature {

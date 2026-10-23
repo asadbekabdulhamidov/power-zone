@@ -73,6 +73,13 @@ This document captures confirmed architectural decisions, technical choices, bus
   1. **Products (`/admin/products`)**: Taking product photos defaults to the rear camera (`facingMode: { ideal: 'environment' }`) for phone/tablet convenience, with graceful fallback to standard video on desktop. Includes 1-click toggle to flip between rear and front cameras with real-time badges.
   2. **Members (`/admin/members`)**: Supports both front camera (`'user'`) for receptionist/client face capture and rear camera (`'environment'`). Features interactive camera switch button (`SwitchCamera`) and disables video horizontal mirroring when the rear camera is active.
 
+### DEC-016: Server-Side Password & Admin Login/Profile Management via JWT
+- **Status**: Confirmed & Implemented
+- **Rule**:
+  1. **Password Change**: Admin password changes bypass client-side checks and are validated directly on the backend (`PUT /api/auth/password`) using bcrypt cryptographic comparisons (`bcrypt.compare` against hashed password stored in PostgreSQL `User` table).
+  2. **Login/Username & Profile Updates**: The settings panel allows modifying the administrator's login username (`username`), email (`email`), phone (`phone`), and full name (`fullName`). These are synchronized with PostgreSQL (`PUT /api/auth/profile`) and updated in local state and browser `localStorage`.
+  3. **Multi-Identifier Login**: The login endpoint (`POST /api/auth/login`) dynamically accepts either the admin's username or email along with the current password.
+
 ---
 
 ## 3. Proposals Pending Approval
