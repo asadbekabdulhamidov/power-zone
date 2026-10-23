@@ -54,8 +54,8 @@ All listed features below have been inspected in code and verified via a clean p
   - *Bir martalik mashg‘ulot* — 20,000 UZS
 - [x] **Interactive Join Modal (`JoinModal`)**: Visitors submit a membership application from the public pricing section. Instead of falsely marking them as paid active members, the request is sent to the admin inquiries inbox (`/admin/messages`) with an unread badge. The visitor receives an immediate success notification instructing them to visit the gym reception ("Zalga kelganingizda qabulxona (admin)ga murojaat qiling va to‘lovni amalga oshiring").
 - [x] **Products Showcase & Live Database Synchronization**:
-  - Purged legacy static mock products (`prod-001` .. `prod-009`, `HydraLife`, `Optimum Nutrition`) from both `INITIAL_PRODUCTS` and client-side `localStorage`.
-  - Replaced fallback seed with the 4 official PostgreSQL products: *Tog‘ Suvi 0.5L*, *Proteinli Shokoladli Bar 60g*, *BCAA Aminokislota Drink 500ml*, and *Fitnes Mashg‘ulot Qo‘lqoplari*.
+  - Purged legacy static mock products from both `INITIAL_PRODUCTS` and client-side `localStorage`.
+  - Populated PostgreSQL database on Neon.tech with 13 official real products across 5 categories: *Tog‘ Suvi (Gazsiz) 0.5L*, *BCAA Amino Energy Drink 500ml*, *L-Carnitine 3000mg Yog‘ Erituvchi Ichimlik 500ml*, *1 Porsiya Whey Protein Kokteyli 350ml*, *1 Porsiya Mass Gainer Kokteyli 450ml*, *Proteinli Shokoladli Bar (Chikalab) 60g*, *Proteinli Pechenye (Cookie Kokos) 60g*, *Kreatin Monogidrat (1 porsiya 5g)*, *Anabolic Creatine*, *Power Zone Sport Sheykeri 700ml*, *Fitnes Mashg‘ulot Qo‘lqoplari (Charm)*, *Og‘ir Atletika va Bel Kamari*, and *Mikrofibra Sport Sochig‘i*.
   - Configured `LandingProductsShowcase` and `/admin/products` to strictly synchronize with live backend records (`GET /api/products?all=true`).
 - [x] **Products Showcase (Fitness Bar)**: Filters and displays active products only (`isActive: true`).
 - [x] **Location & Map Section**: Realistic Tashkent address (Amir Temur shox ko‘chasi, Bodomzor metro), operating hours, parking info, and styled dark map placeholder with navigation links.
