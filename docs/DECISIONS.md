@@ -63,6 +63,10 @@ This document captures confirmed architectural decisions, technical choices, bus
 - **Status**: Confirmed & Implemented
 - **Decision**: Express default body-parser limits (100KB) cause HTTP 413 errors when webcam photos or file attachments are submitted. Backend is configured with `json({ limit: '50mb' })` and frontend is equipped with `compressImageFile` (800px max, JPEG 0.82) to guarantee rapid uploads without network congestion.
 
+### DEC-014: Unique Member Phone Number Enforcement
+- **Status**: Confirmed & Implemented
+- **Rule**: A single phone number can only belong to one member. Both backend (`MembersService.create` and `MembersService.update`) and frontend (`handleAddSubmit`, `handleEditSubmit`, Add/Edit Modals) enforce strict uniqueness based on normalized digits (last 9 digits). Duplicate entries are actively blocked in UI with real-time inline alerts (`⚠️ Ushbu raqam a’zo "Falonchi"ga tegishli!`) and disabled submit actions, while backend enforces HTTP 409 Conflict.
+
 ---
 
 ## 3. Proposals Pending Approval
