@@ -59,6 +59,21 @@ export class ApiError extends Error {
   }
 }
 
+// Brauzer xotirasi (localStorage va Cookie) dan tokenni olish yordamchisi
+export function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const localToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+  if (localToken && localToken.trim().length > 0) {
+    return localToken.trim();
+  }
+  // Agar localStorage bo'sh bo'lsa, Cookie'dan tekshirish
+  const match = document.cookie.match(new RegExp('(^| )' + TOKEN_STORAGE_KEY + '=([^;]+)'));
+  if (match && match[2]) {
+    return decodeURIComponent(match[2].trim());
+  }
+  return null;
+}
+
 // Barcha so'rovlar uchun yagona yordamchi funksiya
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
@@ -68,12 +83,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     ...(options.headers as Record<string, string>),
   };
 
-  // Agar token mavjud bo'lsa, avtomatik Authorization sarlavhasini biriktirish
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  // Agar token mavjud bo'lsa, har bir so'rovga avtomatik Authorization: Bearer <token> biriktirish
+  const token = getStoredToken();
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {
@@ -167,13 +180,11 @@ export const api = {
     },
 
     getToken(): string | null {
-      if (typeof window === 'undefined') return null;
-      return localStorage.getItem(TOKEN_STORAGE_KEY);
+      return getStoredToken();
     },
 
     isAuthenticated(): boolean {
-      if (typeof window === 'undefined') return false;
-      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const token = getStoredToken();
       return Boolean(token && token.length > 20);
     },
   },
