@@ -10,6 +10,7 @@ import {
   Package,
   AlertCircle,
   Camera,
+  SwitchCamera,
   Upload,
   RefreshCw,
   X,
@@ -163,6 +164,7 @@ export default function ProductsPage() {
   // Camera & File upload for Add Product
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [productCameraFacingMode, setProductCameraFacingMode] = useState<'environment' | 'user'>('environment');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -170,6 +172,7 @@ export default function ProductsPage() {
   // Camera & File upload for Edit Product
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
+  const [editProductCameraFacingMode, setEditProductCameraFacingMode] = useState<'environment' | 'user'>('environment');
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
   const editStreamRef = useRef<MediaStream | null>(null);
   const editFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -183,18 +186,31 @@ export default function ProductsPage() {
     other: 'Boshqa',
   };
 
-  // Camera functions for Add Modal
-  const startCamera = async () => {
+  // Camera functions for Add Modal (defaults to rear/environment camera)
+  const startCamera = async (targetMode: 'environment' | 'user' = productCameraFacingMode) => {
     setCameraError(null);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Kamera texnologiyasi ushbu brauzerda qo‘llab-quvvatlanmaydi.');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: targetMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
       streamRef.current = stream;
+      setProductCameraFacingMode(targetMode);
       setIsCameraActive(true);
       setTimeout(() => {
         if (videoRef.current) {
@@ -207,6 +223,11 @@ export default function ProductsPage() {
         'Kameraga ulanib bo‘lmadi. Brauzerda kameraga ruxsat berilganligini tekshiring yoki qurilmadan rasm yuklang.'
       );
     }
+  };
+
+  const toggleCamera = () => {
+    const nextMode = productCameraFacingMode === 'environment' ? 'user' : 'environment';
+    startCamera(nextMode);
   };
 
   const stopCamera = () => {
@@ -254,18 +275,31 @@ export default function ProductsPage() {
     }
   };
 
-  // Camera functions for Edit Modal
-  const startEditCamera = async () => {
+  // Camera functions for Edit Modal (defaults to rear/environment camera)
+  const startEditCamera = async (targetMode: 'environment' | 'user' = editProductCameraFacingMode) => {
     setEditCameraError(null);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Kamera mavjud emas.');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+      if (editStreamRef.current) {
+        editStreamRef.current.getTracks().forEach((track) => track.stop());
+        editStreamRef.current = null;
+      }
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: targetMode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
       editStreamRef.current = stream;
+      setEditProductCameraFacingMode(targetMode);
       setIsEditCameraActive(true);
       setTimeout(() => {
         if (editVideoRef.current) {
@@ -278,6 +312,11 @@ export default function ProductsPage() {
         'Kameraga ulanib bo‘lmadi. Qurilmadan rasm yuklashdan foydalanishingiz mumkin.'
       );
     }
+  };
+
+  const toggleEditCamera = () => {
+    const nextMode = editProductCameraFacingMode === 'environment' ? 'user' : 'environment';
+    startEditCamera(nextMode);
   };
 
   const stopEditCamera = () => {
@@ -818,7 +857,7 @@ export default function ProductsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={startCamera}
+                  onClick={() => startCamera()}
                   className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
                 >
                   <Camera className="w-3.5 h-3.5 mr-1.5 text-sky-400" />
@@ -854,9 +893,13 @@ export default function ProductsPage() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover ${productCameraFacingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                 />
-                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3 px-4">
+                <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-zinc-700 text-white text-[10px] font-semibold flex items-center gap-1.5 shadow-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
+                  <span>{productCameraFacingMode === 'environment' ? 'Orqa kamera' : 'Oldi kamera'}</span>
+                </div>
+                <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 px-3">
                   <Button
                     type="button"
                     size="sm"
@@ -871,8 +914,19 @@ export default function ProductsPage() {
                     type="button"
                     size="sm"
                     variant="outline"
+                    onClick={toggleCamera}
+                    className="bg-black/70 backdrop-blur-md text-white text-xs border-zinc-700 hover:bg-black/90 hover:text-lime-400"
+                    title="Oldi va orqa kamerani almashtirish"
+                  >
+                    <SwitchCamera className="w-3.5 h-3.5 mr-1 text-lime-400" />
+                    <span>Almashtirish</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
                     onClick={stopCamera}
-                    className="bg-black/60 backdrop-blur-md text-white text-xs border-zinc-700"
+                    className="bg-black/70 backdrop-blur-md text-zinc-300 hover:text-white text-xs border-zinc-700"
                   >
                     Bekor qilish
                   </Button>
@@ -1089,7 +1143,7 @@ export default function ProductsPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={startEditCamera}
+                    onClick={() => startEditCamera()}
                     className="bg-zinc-900 border-zinc-700 hover:border-lime-500/50 text-xs py-1.5 h-auto text-zinc-200"
                   >
                     <Camera className="w-3.5 h-3.5 mr-1.5 text-sky-400" />
@@ -1124,9 +1178,13 @@ export default function ProductsPage() {
                     autoPlay
                     playsInline
                     muted
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${editProductCameraFacingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                   />
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3 px-4">
+                  <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-zinc-700 text-white text-[10px] font-semibold flex items-center gap-1.5 shadow-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" />
+                    <span>{editProductCameraFacingMode === 'environment' ? 'Orqa kamera' : 'Oldi kamera'}</span>
+                  </div>
+                  <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 px-3">
                     <Button
                       type="button"
                       size="sm"
@@ -1141,8 +1199,19 @@ export default function ProductsPage() {
                       type="button"
                       size="sm"
                       variant="outline"
+                      onClick={toggleEditCamera}
+                      className="bg-black/70 backdrop-blur-md text-white text-xs border-zinc-700 hover:bg-black/90 hover:text-lime-400"
+                      title="Oldi va orqa kamerani almashtirish"
+                    >
+                      <SwitchCamera className="w-3.5 h-3.5 mr-1 text-lime-400" />
+                      <span>Almashtirish</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
                       onClick={stopEditCamera}
-                      className="bg-black/60 backdrop-blur-md text-white text-xs border-zinc-700"
+                      className="bg-black/70 backdrop-blur-md text-zinc-300 hover:text-white text-xs border-zinc-700"
                     >
                       Bekor qilish
                     </Button>

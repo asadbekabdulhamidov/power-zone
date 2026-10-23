@@ -14,6 +14,7 @@ import {
   Dumbbell,
   Camera,
   CameraOff,
+  SwitchCamera,
   Upload,
   Send,
   ExternalLink,
@@ -101,6 +102,7 @@ export default function MembersPage() {
   // Camera & upload states for Add Member
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraFacingMode, setCameraFacingMode] = useState<'user' | 'environment'>('user');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -124,6 +126,7 @@ export default function MembersPage() {
   const [editFormError, setEditFormError] = useState<string | null>(null);
   const [isEditCameraActive, setIsEditCameraActive] = useState(false);
   const [editCameraError, setEditCameraError] = useState<string | null>(null);
+  const [editCameraFacingMode, setEditCameraFacingMode] = useState<'user' | 'environment'>('user');
   const editVideoRef = useRef<HTMLVideoElement | null>(null);
   const editStreamRef = useRef<MediaStream | null>(null);
   const editFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -249,21 +252,42 @@ export default function MembersPage() {
     setEditingPayment(null);
   };
 
-  // Camera helpers
-  const startCamera = async (isEdit = false) => {
+  // Camera helpers (supports both front/selfie and rear/back camera)
+  const startCamera = async (isEdit = false, targetFacingMode?: 'user' | 'environment') => {
     if (isEdit) setEditCameraError(null);
     else setCameraError(null);
+
+    const mode = targetFacingMode || (isEdit ? editCameraFacingMode : cameraFacingMode);
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Kamera texnologiyasi ushbu brauzerda mavjud emas');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-        audio: false,
-      });
+
+      // Stop any existing active stream before switching/starting
+      if (isEdit && editStreamRef.current) {
+        editStreamRef.current.getTracks().forEach((track) => track.stop());
+        editStreamRef.current = null;
+      } else if (!isEdit && streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
 
       if (isEdit) {
+        setEditCameraFacingMode(mode);
         editStreamRef.current = stream;
         setIsEditCameraActive(true);
         setTimeout(() => {
@@ -273,6 +297,7 @@ export default function MembersPage() {
           }
         }, 100);
       } else {
+        setCameraFacingMode(mode);
         streamRef.current = stream;
         setIsCameraActive(true);
         setTimeout(() => {
@@ -289,6 +314,12 @@ export default function MembersPage() {
       if (isEdit) setEditCameraError(msg);
       else setCameraError(msg);
     }
+  };
+
+  const toggleCamera = (isEdit = false) => {
+    const currentMode = isEdit ? editCameraFacingMode : cameraFacingMode;
+    const nextMode = currentMode === 'user' ? 'environment' : 'user';
+    startCamera(isEdit, nextMode);
   };
 
   const stopCamera = (isEdit = false) => {
@@ -1007,25 +1038,39 @@ export default function MembersPage() {
                     autoPlay
                     playsInline
                     muted
-                    className="w-full h-full object-cover transform -scale-x-100"
+                    className={`w-full h-full object-cover ${cameraFacingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                   />
-                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    <span>Jonli Kamera</span>
+                  <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-zinc-700 text-white text-[10px] font-bold flex items-center gap-1.5 shadow-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span>{cameraFacingMode === 'user' ? 'Oldi kamera (Selfie)' : 'Orqa kamera'}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => stopCamera(false)}
-                    className="text-xs border-zinc-700 text-zinc-300"
-                  >
-                    <CameraOff className="w-3.5 h-3.5 mr-1" />
-                    <span>Kamerani Yopish</span>
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => stopCamera(false)}
+                      className="text-xs border-zinc-700 text-zinc-300"
+                    >
+                      <CameraOff className="w-3.5 h-3.5 mr-1" />
+                      <span>Kamerani Yopish</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleCamera(false)}
+                      className="text-xs border-zinc-700 bg-zinc-900 text-zinc-200 hover:text-white hover:border-lime-500/50"
+                      title="Oldi va orqa kamerani almashtirish"
+                    >
+                      <SwitchCamera className="w-3.5 h-3.5 mr-1.5 text-lime-400" />
+                      <span>{cameraFacingMode === 'user' ? 'Orqa kamera' : 'Oldi kamera'}</span>
+                    </Button>
+                  </div>
 
                   <Button
                     type="button"
@@ -1449,25 +1494,39 @@ export default function MembersPage() {
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-full object-cover transform -scale-x-100"
+                      className={`w-full h-full object-cover ${editCameraFacingMode === 'user' ? 'transform -scale-x-100' : ''}`}
                     />
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold animate-pulse flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      <span>Jonli Kamera</span>
+                    <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-black/75 backdrop-blur-md border border-zinc-700 text-white text-[10px] font-bold flex items-center gap-1.5 shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span>{editCameraFacingMode === 'user' ? 'Oldi kamera (Selfie)' : 'Orqa kamera'}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => stopCamera(true)}
-                      className="text-xs border-zinc-700 text-zinc-300"
-                    >
-                      <CameraOff className="w-3.5 h-3.5 mr-1" />
-                      <span>Kamerani Yopish</span>
-                    </Button>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stopCamera(true)}
+                        className="text-xs border-zinc-700 text-zinc-300"
+                      >
+                        <CameraOff className="w-3.5 h-3.5 mr-1" />
+                        <span>Kamerani Yopish</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleCamera(true)}
+                        className="text-xs border-zinc-700 bg-zinc-900 text-zinc-200 hover:text-white hover:border-lime-500/50"
+                        title="Oldi va orqa kamerani almashtirish"
+                      >
+                        <SwitchCamera className="w-3.5 h-3.5 mr-1.5 text-lime-400" />
+                        <span>{editCameraFacingMode === 'user' ? 'Orqa kamera' : 'Oldi kamera'}</span>
+                      </Button>
+                    </div>
 
                     <Button
                       type="button"
