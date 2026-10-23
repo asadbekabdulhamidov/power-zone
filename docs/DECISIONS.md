@@ -67,6 +67,12 @@ This document captures confirmed architectural decisions, technical choices, bus
 - **Status**: Confirmed & Implemented
 - **Rule**: A single phone number can only belong to one member. Both backend (`MembersService.create` and `MembersService.update`) and frontend (`handleAddSubmit`, `handleEditSubmit`, Add/Edit Modals) enforce strict uniqueness based on normalized digits (last 9 digits). Duplicate entries are actively blocked in UI with real-time inline alerts (`⚠️ Ushbu raqam a’zo "Falonchi"ga tegishli!`) and disabled submit actions, while backend enforces HTTP 409 Conflict.
 
+### DEC-015: Dual Camera Selection (Front & Rear) for Members and Products
+- **Status**: Confirmed & Implemented
+- **Rule**:
+  1. **Products (`/admin/products`)**: Taking product photos defaults to the rear camera (`facingMode: { ideal: 'environment' }`) for phone/tablet convenience, with graceful fallback to standard video on desktop. Includes 1-click toggle to flip between rear and front cameras with real-time badges.
+  2. **Members (`/admin/members`)**: Supports both front camera (`'user'`) for receptionist/client face capture and rear camera (`'environment'`). Features interactive camera switch button (`SwitchCamera`) and disables video horizontal mirroring when the rear camera is active.
+
 ---
 
 ## 3. Proposals Pending Approval
