@@ -90,10 +90,10 @@ This document captures confirmed architectural decisions, technical choices, bus
 ### DEC-018: Android and Windows Progressive Web App (PWA) Implementation
 - **Status**: Confirmed & Implemented
 - **Rule**:
-  1. **Manifest & Route Generation**: Added `src/app/manifest.ts` and `public/manifest.json` configured with `display: 'standalone'`, `orientation: 'any'`, categories, and taskbar shortcuts for quick navigation to `/admin`, `/admin/members`, and `/admin/payments`.
+  1. **Manifest & Route Generation**: Added `src/app/manifest.ts` and `public/manifest.json` configured with `start_url: '/admin'` (automatically launching directly into the admin login/dashboard when tapped), `display: 'standalone'`, `orientation: 'any'`, and taskbar shortcuts for quick navigation.
   2. **Icon Suite**: Generated dedicated PNG icons (`192x192`, `512x512`), adaptive maskable icon (`512x512`), `apple-touch-icon` (`180x180`), and scalable vector badge (`icon.svg`) matching the dark athletic lime aesthetic.
   3. **Service Worker (`public/sw.js`)**: Implemented caching strategy with stale-while-revalidate for static assets, network-first for navigation HTML, and direct bypass for backend API requests (`/api/*`), ensuring instant loading and offline capability.
-  4. **Platform-Adaptive Install Prompts**: Built `<PwaRegister />` client component detecting Android and Windows user agents, listening to `beforeinstallprompt`, and providing 1-click install triggers with dismissal memory, alongside dedicated install controls in the admin sidebar.
+  4. **Admin-Exclusive Install Scope**: Built `<PwaRegister />` client component strictly scoped to admin routes (`pathname.startsWith('/admin')`). Public gym visitors on the landing page (`/`) will never see install popups; only administrators on `/admin/login` and the admin dashboard are prompted to install the standalone Windows/Android app.
 
 ---
 

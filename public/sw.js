@@ -1,8 +1,10 @@
 // Power Zone PWA Service Worker
-const CACHE_NAME = 'powerzone-pwa-v1';
+const CACHE_NAME = 'powerzone-pwa-v2';
 
 const STATIC_ASSETS = [
   '/',
+  '/admin',
+  '/admin/login',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',

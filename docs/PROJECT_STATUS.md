@@ -23,10 +23,10 @@ All listed features below have been inspected in code and verified via a clean p
 - [x] **Live Inquiries Synchronization**:
   - Contact messages submitted on the landing page are directly stored in PostgreSQL `ContactMessage` table and queried live by `/admin/messages`.
 - [x] **Android & Windows Progressive Web App (PWA) Support**:
-  - Implemented Next.js 15 Web App Manifest (`manifest.ts` and `public/manifest.json`) supporting standalone display, window-controls overlay, and custom jump list shortcuts (`/admin`, `/admin/members`, `/admin/payments`).
+  - Implemented Next.js 15 Web App Manifest (`manifest.ts` and `public/manifest.json`) supporting standalone display, window-controls overlay, and custom jump list shortcuts (`/admin`, `/admin/members`, `/admin/payments`), launching directly into `/admin` (login/dashboard).
   - Created complete icon set: `icon-192x192.png`, `icon-512x512.png`, adaptive maskable `icon-maskable-512x512.png`, `apple-touch-icon.png`, and vector `icon.svg`.
   - Implemented client-side Service Worker (`public/sw.js`) with cache-first asset caching, stale-while-revalidate, and bypass for backend REST API endpoints.
-  - Added `<PwaRegister />` client component with native `beforeinstallprompt` handling, Android & Windows OS detection, and custom 1-click install action in the admin sidebar.
+  - Added `<PwaRegister />` client component strictly scoped to `/admin/*` routes (hidden on public landing page) with native `beforeinstallprompt` handling, Android & Windows OS detection, and custom 1-click install action in the admin sidebar.
 - [x] **Clean Production Build**: Zero TypeScript errors, zero ESLint warnings, all 16 routes statically generated with Turbopack.
 - [x] **Swagger & OpenAPI Audit**: Inspected live NestJS Swagger specification (`http://localhost:4000/api/docs`) verifying 23 endpoints across Auth, Members, Plans, Payments, Products, Messages, Website CMS, and Dashboard analytics.
 - [x] **QA Defect Identification & Payload Limit Fix**: Identified critical 413 Payload Too Large error when uploading member/product photos (default body-parser limit of 100KB). Fixed in `power-backend/src/main.ts` with `json({ limit: '50mb' })` and `urlencoded({ limit: '50mb' })`.

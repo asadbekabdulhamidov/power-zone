@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, X, Smartphone, Monitor, CheckCircle2 } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,6 +10,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaRegister() {
+  const pathname = usePathname();
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -17,7 +21,7 @@ export function PwaRegister() {
   const [deviceType, setDeviceType] = useState<'android' | 'windows' | 'other'>('other');
 
   useEffect(() => {
-    // 1. Service Worker registratsiyasi
+    // 1. Service Worker registratsiyasi (faqat brauzer muhitida)
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
@@ -51,7 +55,7 @@ export function PwaRegister() {
 
     // Sessiyada oldin yopilganligini tekshirish
     try {
-      const dismissed = sessionStorage.getItem('powerzone_pwa_dismissed');
+      const dismissed = sessionStorage.getItem('powerzone_admin_pwa_dismissed');
       if (dismissed === 'true') {
         setIsDismissed(true);
       }
@@ -72,7 +76,7 @@ export function PwaRegister() {
       setTimeout(() => {
         setIsInstalledSuccess(false);
       }, 4000);
-      console.log('[PWA] Power Zone ilovasi muvaffaqiyatli o‘rnatildi!');
+      console.log('[PWA] Power Zone Admin ilovasi muvaffaqiyatli o‘rnatildi!');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -92,7 +96,7 @@ export function PwaRegister() {
     const choiceResult = await deferredPrompt.userChoice;
 
     if (choiceResult.outcome === 'accepted') {
-      console.log('[PWA] Foydalanuvchi ilovani o‘rnatishga rozilik berdi');
+      console.log('[PWA] Foydalanuvchi Admin ilovasini o‘rnatishga rozilik berdi');
       setIsInstallable(false);
       setDeferredPrompt(null);
     } else {
@@ -103,9 +107,15 @@ export function PwaRegister() {
   const handleDismiss = () => {
     setIsDismissed(true);
     try {
-      sessionStorage.setItem('powerzone_pwa_dismissed', 'true');
+      sessionStorage.setItem('powerzone_admin_pwa_dismissed', 'true');
     } catch {}
   };
+
+  // MUHIM QOIDA: Agar foydalanuvchi oddiy mijoz saytida bo'lsa (/), HECH QACHON o'rnatish oynasi chiqmaydi!
+  // O'rnatish taklifi FAQAT Admin qismida (/admin yoki /admin/login) chiqadi.
+  if (!isAdminRoute) {
+    return null;
+  }
 
   // Agar ilova allaqachon standalone ochilgan bo'lsa yoki prompt yo'q bo'lsa
   if (isStandalone || !isInstallable || isDismissed) {
@@ -115,7 +125,7 @@ export function PwaRegister() {
         <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-zinc-900 border border-lime-500/40 text-white shadow-2xl shadow-lime-500/10">
             <CheckCircle2 className="w-5 h-5 text-lime-400 shrink-0" />
-            <span className="text-xs font-semibold">Power Zone ilovasi o‘rnatildi!</span>
+            <span className="text-xs font-semibold">Power Zone Admin ilovasi o‘rnatildi!</span>
           </div>
         </div>
       );
@@ -140,10 +150,10 @@ export function PwaRegister() {
           <div className="flex items-center justify-between gap-2">
             <h4 className="text-xs font-bold text-white tracking-wide">
               {deviceType === 'windows'
-                ? 'Windows ilovasi sifatida o‘rnatish'
+                ? 'Power Zone Admin (Windows Dasturi)'
                 : deviceType === 'android'
-                ? 'Android ilovasi sifatida o‘rnatish'
-                : 'Power Zone ilovasini o‘rnatish'}
+                ? 'Power Zone Admin (Android Ilovasi)'
+                : 'Power Zone Admin ilovasini o‘rnatish'}
             </h4>
             <button
               onClick={handleDismiss}
@@ -155,8 +165,8 @@ export function PwaRegister() {
           </div>
           <p className="text-[11px] text-zinc-300 mt-0.5 leading-snug">
             {deviceType === 'windows'
-              ? 'Tizimni brauzersiz, ish stolida alohida Windows dasturi kabi tezkor ochish.'
-              : 'Mobil telefon ekraniga qo‘shib, ilova kabi to‘liq ekranda qulay foydalanish.'}
+              ? 'Ish stolida alohida Windows dasturi sifatida o‘rnatish. Bosganda to‘g‘ridan-to‘g‘ri login va boshqaruv paneliga kiradi.'
+              : 'Mobil telefon ekraniga admin ilovasi sifatida qo‘shish. Bosganda to‘g‘ridan-to‘g‘ri admin tizimiga kiradi.'}
           </p>
 
           <div className="flex items-center gap-2 mt-3">
