@@ -87,6 +87,14 @@ This document captures confirmed architectural decisions, technical choices, bus
   2. **Live Synchronization**: Frontend parses both flat backend columns and structured nested CMS responses (`formatApiWebsiteContent`). All modifications across Hero, Stats, Facilities (Features CRUD), Banner, and Contact/Social media trigger direct authenticated updates (`PUT /api/website`).
   3. **Admin Form Synchronization**: `/admin/website` features reactive `useEffect` synchronization to prevent stale inputs from overwriting live database records, complete with asynchronous save state indicators (`isLoading`).
 
+### DEC-018: Android and Windows Progressive Web App (PWA) Implementation
+- **Status**: Confirmed & Implemented
+- **Rule**:
+  1. **Manifest & Route Generation**: Added `src/app/manifest.ts` and `public/manifest.json` configured with `display: 'standalone'`, `orientation: 'any'`, categories, and taskbar shortcuts for quick navigation to `/admin`, `/admin/members`, and `/admin/payments`.
+  2. **Icon Suite**: Generated dedicated PNG icons (`192x192`, `512x512`), adaptive maskable icon (`512x512`), `apple-touch-icon` (`180x180`), and scalable vector badge (`icon.svg`) matching the dark athletic lime aesthetic.
+  3. **Service Worker (`public/sw.js`)**: Implemented caching strategy with stale-while-revalidate for static assets, network-first for navigation HTML, and direct bypass for backend API requests (`/api/*`), ensuring instant loading and offline capability.
+  4. **Platform-Adaptive Install Prompts**: Built `<PwaRegister />` client component detecting Android and Windows user agents, listening to `beforeinstallprompt`, and providing 1-click install triggers with dismissal memory, alongside dedicated install controls in the admin sidebar.
+
 ---
 
 ## 3. Proposals Pending Approval

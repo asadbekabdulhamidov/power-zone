@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   LogOut,
   Dumbbell,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFitnesFlow } from '@/context/fitnes-context';
@@ -30,6 +31,45 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
   const router = useRouter();
   const { notifications, contactMessages } = useFitnesFlow();
   const unreadMessagesCount = contactMessages.filter((m) => m.status === 'new').length;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const standalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+
+      const handleBeforeInstall = (e: Event) => {
+        e.preventDefault();
+        setInstallPrompt(e);
+      };
+
+      const handleAppInstalled = () => {
+        setIsStandalone(true);
+        setInstallPrompt(null);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.addEventListener('appinstalled', handleAppInstalled);
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      };
+    }
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (installPrompt) {
+      await installPrompt.prompt();
+      setInstallPrompt(null);
+    }
+  };
 
   const handleLogout = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -165,6 +205,21 @@ export function AdminSidebar({ onCloseMobile }: SidebarProps) {
 
       {/* Footer Info & Links */}
       <div className="p-3 border-t border-zinc-800/60 bg-zinc-950/40 space-y-1 shrink-0">
+        {installPrompt && !isStandalone && (
+          <button
+            type="button"
+            onClick={handleInstallApp}
+            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-lime-400 bg-lime-500/10 hover:bg-lime-500/20 border border-lime-500/30 rounded-xl transition-all cursor-pointer mb-1 shadow-sm shadow-lime-500/10"
+          >
+            <div className="flex items-center gap-2">
+              <Download className="w-3.5 h-3.5 text-lime-400" />
+              <span>Ilovani o‘rnatish</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-lime-500/20 text-lime-300 font-bold tracking-wider">
+              PWA
+            </span>
+          </button>
+        )}
         <Link
           href="/"
           className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-xl transition-colors"
