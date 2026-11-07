@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Dumbbell, Menu, X, Shield, ArrowRight } from 'lucide-react';
+import { Dumbbell, Menu, X, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function LandingNavbar() {
@@ -49,14 +49,6 @@ export function LandingNavbar() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/60 flex items-center gap-1.5"
-          >
-            <Shield className="w-3.5 h-3.5 text-lime-400" />
-            <span>Admin Panel</span>
-          </Link>
-
           <a href="#tariflar">
             <Button variant="primary" size="sm" className="shadow-lg shadow-lime-500/20">
               <span>A’zo bo‘lish</span>
@@ -67,12 +59,6 @@ export function LandingNavbar() {
 
         {/* Mobile Hamburger */}
         <div className="flex md:hidden items-center gap-2">
-          <Link
-            href="/admin"
-            className="text-xs text-lime-400 p-2 rounded-lg bg-zinc-900 border border-zinc-800"
-          >
-            <Shield className="w-4 h-4" />
-          </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-zinc-300 hover:text-white rounded-lg hover:bg-zinc-800"
@@ -100,15 +86,6 @@ export function LandingNavbar() {
           </div>
 
           <div className="pt-4 border-t border-zinc-800/80 flex flex-col gap-3">
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-sm font-semibold text-zinc-300"
-            >
-              <Shield className="w-4 h-4 text-lime-400" />
-              <span>Admin Boshqaruv Tizimi</span>
-            </Link>
-
             <a
               href="#tariflar"
               onClick={() => setMobileMenuOpen(false)}

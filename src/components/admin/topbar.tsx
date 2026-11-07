@@ -59,7 +59,7 @@ export function AdminTopbar({
         {/* Today's Date */}
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>{formatDateUz(todayStr)}</span>
+          <span suppressHydrationWarning>{formatDateUz(todayStr)}</span>
         </div>
 
         {/* Quick Payment Button */}
@@ -93,7 +93,7 @@ export function AdminTopbar({
         <Link
           href="/admin/notifications"
           className="relative p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/60 rounded-xl transition-colors border border-zinc-800/80"
-          title="Muddati yaqinlashgan va o'tganlar"
+          title="Muddati yaqinlashgan va o‘tganlar"
         >
           <Bell className="w-4 h-4" />
           {notifications.length > 0 && (

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api-client';
 
 const loginSchema = z.object({
-  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@fitnesflow.uz)'),
+  login: z.string().min(3, 'Kamida 3 ta belgi kiriting (masalan, admin yoki admin@powerzone.uz)'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak'),
   rememberMe: z.boolean(),
 });
@@ -158,7 +158,7 @@ export default function AdminLoginPage() {
             <div>
               <Input
                 label="Email yoki Foydalanuvchi nomi"
-                placeholder="admin@fitnesflow.uz"
+                placeholder="admin@powerzone.uz"
                 leftIcon={<Mail className="w-4 h-4" />}
                 {...register('login')}
                 error={errors.login?.message}
@@ -217,7 +217,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Footer info */}
-        <p className="text-center text-xs text-zinc-500 mt-6">
+        <p suppressHydrationWarning className="text-center text-xs text-zinc-500 mt-6">
           © {new Date().getFullYear()} Power Zone. Barcha huquqlar himoyalangan.
         </p>
       </div>

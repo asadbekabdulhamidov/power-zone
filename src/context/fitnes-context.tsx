@@ -96,9 +96,9 @@ interface FitnesContextType {
 
 const DEFAULT_ADMIN: AdminProfile = {
   fullName: 'Power Zone Admin',
-  email: 'admin@fitnesflow.uz',
+  email: 'admin@powerzone.uz',
   username: 'admin',
-  phone: '+998 (90) 123-45-67',
+  phone: '+998 91 159 85 85',
   role: 'Bosh Administrator',
 };
 
@@ -159,25 +159,12 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>(INITIAL_PAYMENTS);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [adminProfile, setAdminProfile] = useState<AdminProfile>(DEFAULT_ADMIN);
-  const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('powerzone_website_content');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && (parsed.hero || parsed.heroTitle)) {
-            return formatApiWebsiteContent(parsed);
-          }
-        }
-      } catch {}
-    }
-    return INITIAL_WEBSITE_CONTENT;
-  });
+  const [websiteContent, setWebsiteContent] = useState<WebsiteContent>(INITIAL_WEBSITE_CONTENT);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>(INITIAL_CONTACT_MESSAGES);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Clean up legacy localStorage mock data on startup so PostgreSQL database is the single source of truth
+  // Clean up legacy localStorage mock data on startup and restore cached website content
   useEffect(() => {
     try {
       localStorage.removeItem('fitnesflow_members');
@@ -186,6 +173,14 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('fitnesflow_products');
       localStorage.removeItem('powerzone_admin_profile');
       localStorage.removeItem('powerzone_contact_messages');
+
+      const cached = localStorage.getItem('powerzone_website_content');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && (parsed.hero || parsed.heroTitle)) {
+          setWebsiteContent(formatApiWebsiteContent(parsed));
+        }
+      }
     } catch {
       // Ignore storage errors in private browsing modes
     } finally {
@@ -495,7 +490,7 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const deleteMember = (id: string) => {
     const member = members.find((m) => m.id === id);
     setMembers((prev) => prev.filter((m) => m.id !== id));
-    showToast(`"${member?.fullName || "A'zo"}" ro‘yxatdan o‘chirildi.`, 'info');
+    showToast(`"${member?.fullName || "A’zo"}" ro‘yxatdan o‘chirildi.`, 'info');
 
     // Asynchronously delete on server
     (async () => {
@@ -515,11 +510,11 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
   const recordMemberVisit = (memberId: string): { success: boolean; message: string } => {
     const member = members.find((m) => m.id === memberId);
     if (!member) {
-      return { success: false, message: "A'zo topilmadi." };
+      return { success: false, message: "A’zo topilmadi." };
     }
 
     if (member.status === 'expired') {
-      showToast(`Muddati o‘tgan a'zo! Yangi to‘lov kiritilishi shart.`, 'error');
+      showToast(`Muddati o‘tgan a’zo! Yangi to‘lov kiritilishi shart.`, 'error');
       return { success: false, message: "Abonement muddati tugagan." };
     }
 
@@ -529,10 +524,10 @@ export function FitnesFlowProvider({ children }: { children: ReactNode }) {
     }
 
     if (member.accessType === 'weekly_3_days' && member.visitsThisWeek >= 3) {
-      showToast(`Haftalik limit (3/3) to'lgan! Keyingi haftagacha tashrif cheklangan.`, 'error');
+      showToast(`Haftalik limit (3/3) to‘lgan! Keyingi haftagacha tashrif cheklangan.`, 'error');
       return {
         success: false,
-        message: "Ushbu a'zo bu hafta uchun 3 ta ruxsat etilgan tashrifini to'liq ishlatib bo'lgan.",
+        message: "Ushbu a’zo bu hafta uchun 3 ta ruxsat etilgan tashrifini to‘liq ishlatib bo‘lgan.",
       };
     }
 

@@ -62,7 +62,7 @@ export interface Payment {
   notes?: string;
 }
 
-export type ProductCategory = 'water' | 'vitamins' | 'sports_drinks' | 'accessories' | 'other';
+export type ProductCategory = 'sports_nutrition' | 'water' | 'vitamins' | 'sports_drinks' | 'accessories' | 'other';
 
 export interface Product {
   id: string;

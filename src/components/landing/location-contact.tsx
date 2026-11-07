@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFitnesFlow } from '@/context/fitnes-context';
+import { formatDisplayPhone } from '@/lib/utils';
 
 export function LandingLocationContact() {
   const { websiteContent, addContactMessage } = useFitnesFlow();
@@ -87,7 +88,7 @@ export function LandingLocationContact() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {/* Phone Call */}
           <a
-            href={`tel:${contact.phone?.replace(/[^0-9+]/g, '') || '+998901234567'}`}
+            href={`tel:${contact.phone?.replace(/[^0-9+]/g, '') || '+998911598585'}`}
             className="p-5 rounded-2xl bg-[#111827]/80 border border-zinc-800 hover:border-lime-500/50 transition-all duration-300 group hover:-translate-y-1 flex flex-col justify-between"
           >
             <div className="flex items-center gap-3 mb-3">
@@ -97,7 +98,7 @@ export function LandingLocationContact() {
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Zal Telefoni</p>
                 <p className="text-sm font-extrabold text-white group-hover:text-lime-300 transition-colors">
-                  {contact.phone}
+                  {formatDisplayPhone(contact.phone || '+998 91 159 85 85')}
                 </p>
               </div>
             </div>
@@ -319,14 +320,10 @@ export function LandingLocationContact() {
                   <Clock className="w-4 h-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Ish Tartibi</span>
                 </div>
-                <div className="text-[11px] space-y-1">
+                <div className="text-[11px]">
                   <div className="flex justify-between">
-                    <span className="text-zinc-400">Dush – Shan:</span>
-                    <span className="font-bold text-white">{contact.workingHoursWeekdays}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Yakshanba:</span>
-                    <span className="font-bold text-lime-400">{contact.workingHoursSunday}</span>
+                    <span className="text-zinc-400">Har kuni:</span>
+                    <span className="font-bold text-white">{contact.workingHoursWeekdays || '14:00 – 00:00'}</span>
                   </div>
                 </div>
               </div>

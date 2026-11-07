@@ -48,7 +48,7 @@ const PRESET_PRODUCT_IMAGES: {
   },
   {
     label: 'Whey Protein',
-    category: 'vitamins',
+    category: 'sports_nutrition',
     url: 'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
   },
   {
@@ -89,6 +89,8 @@ const PRESET_PRODUCT_IMAGES: {
 ];
 
 const CATEGORY_DEFAULT_IMAGES: Record<ProductCategory, string> = {
+  sports_nutrition:
+    'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
   water:
     'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
   vitamins:
@@ -179,6 +181,7 @@ export default function ProductsPage() {
 
   // Category labels map
   const categoryLabels: Record<ProductCategory, string> = {
+    sports_nutrition: 'Sport ozuqalari',
     water: 'Suv',
     vitamins: 'Vitaminlar',
     sports_drinks: 'Sport ichimliklari',
@@ -372,7 +375,9 @@ export default function ProductsPage() {
         p.description.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchCategory =
-        categoryFilter === 'all' || p.category === categoryFilter;
+        categoryFilter === 'all' ||
+        p.category === categoryFilter ||
+        (categoryFilter === 'sports_nutrition' && p.categoryLabel === 'Sport ozuqalari');
 
       return matchSearch && matchCategory;
     });
@@ -581,6 +586,7 @@ export default function ProductsPage() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
           {[
             { id: 'all', label: 'Barchasi' },
+            { id: 'sports_nutrition', label: 'Sport ozuqalari' },
             { id: 'water', label: 'Suv' },
             { id: 'vitamins', label: 'Vitaminlar' },
             { id: 'sports_drinks', label: 'Sport ichimliklari' },
@@ -759,6 +765,7 @@ export default function ProductsPage() {
             <Select
               label="Kategoriya"
               options={[
+                { label: 'Sport ozuqalari (Protein, kreatin, BCAA)', value: 'sports_nutrition' },
                 { label: 'Suv (Mineral va gazsiz)', value: 'water' },
                 { label: 'Vitaminlar va qo‘shimchalar', value: 'vitamins' },
                 { label: 'Sport ichimliklari (Izotoniklar)', value: 'sports_drinks' },
@@ -1050,6 +1057,7 @@ export default function ProductsPage() {
               <Select
                 label="Kategoriya"
                 options={[
+                  { label: 'Sport ozuqalari', value: 'sports_nutrition' },
                   { label: 'Suv', value: 'water' },
                   { label: 'Vitaminlar', value: 'vitamins' },
                   { label: 'Sport ichimliklari', value: 'sports_drinks' },
@@ -1072,7 +1080,7 @@ export default function ProductsPage() {
                 onChange={(e) => setEditPrice(parseNumericInput(e.target.value))}
                 min={0}
                 required
-                helperText={`So'mda: ${formatUZS(editPrice)}`}
+                helperText={`So‘mda: ${formatUZS(editPrice)}`}
               />
             </div>
 

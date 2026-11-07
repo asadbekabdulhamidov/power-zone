@@ -96,7 +96,7 @@ export function LandingAbout() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={banner.imageUrl || '/images/about/coach-training.webp'}
-                  alt={banner.title || "Power Zone professional murabbiy va mashg'ulot"}
+                  alt={banner.title || 'Power Zone professional murabbiy va mashg‘ulot'}
                   className="absolute inset-0 w-full h-full object-cover object-[center_30%]"
                 />
               </div>

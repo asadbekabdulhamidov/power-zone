@@ -1,6 +1,6 @@
 # FitnesFlow — Project Implementation Status
 
-**Last Updated**: 2026-10-22  
+**Last Updated**: 2026-11-06  
 **Project Phase**: Complete Production Deployment & Live PostgreSQL Single-Source-of-Truth
 
 ---
@@ -10,6 +10,26 @@
 All listed features below have been inspected in code and verified via a clean production build (`npm run build` with Turbopack, exit code 0):
 
 ### A. Production Transition & 100% Live Database Architecture
+- [x] **React Hydration Error (#418) Resolution**:
+  - Eliminated server/client text divergence caused by `Intl.NumberFormat('uz-UZ')` (non-breaking spaces `\u00A0` on Node SSR vs browser space ` `) by introducing a deterministic regex number formatter in `formatUZS` (`src/lib/utils.ts`).
+  - Removed synchronous `localStorage.getItem` reading inside `useState` initializers in `FitnesFlowProvider`, moving cache rehydration into `useEffect`.
+  - Removed duplicate manual `<head>` markup from `src/app/layout.tsx` to prevent Next.js 15 metadata reconciliation conflicts.
+  - Added hydration-safe mounts and `suppressHydrationWarning` on dynamic clock/date headers in `AdminTopbar` and copyright years.
+- [x] **Admin Security & Public Navigation Decoupling**:
+  - Removed all 4 `/admin` links from the public landing page (desktop navbar button, mobile header shield icon, mobile drawer admin link, and footer column 5 card).
+  - Retained exclusively a discreet, low-contrast "Xodimlar uchun" link in the footer bottom bar linking to `/admin/login`.
+  - Verified edge middleware (`src/middleware.ts`) and layout auth guard redirect unauthenticated requests to `/admin/login?returnUrl=...`.
+  - Updated login placeholder to `admin@powerzone.uz` (or "Email yoki login") and cataloged all project occurrences of `fitnesflow`.
+- [x] **Product Categorization & Sport Nutrition Enhancement**:
+  - Added `sports_nutrition` category ("Sport ozuqalari") in frontend types, filters, and admin management.
+  - Migrated CREATINE, GOLD BETA ALANINE, GOLD CITRULLINE, MAX PUMP, NO-XPLODE, PSYCHOTIC, ISO PROTEIN, and WHEY PRO PROTEIN from "Vitaminlar" to "Sport ozuqalari" on both PostgreSQL backend and frontend.
+  - Dynamically hide empty categories (e.g. "Vitaminlar") in the public landing page category tabs.
+- [x] **Copywriting, Spelling & Formatting Standardization**:
+  - Standardized apostrophes in Uzbek Latin (`o‘` and `g‘`) uniformly using `‘` across the codebase.
+  - Corrected spelling: "Bir kunlik to'lo'v" -> "Bir kunlik to‘lov", "ISO PROTAIN" -> "ISO PROTEIN", "WHEY PRO PROTAIN" -> "WHEY PRO PROTEIN", unified "Bir porsiya narxi", and expanded water pricing to "Bir donasi 3 000 so'm, ikkitasi 5 000 so'm".
+  - Standardized gym stats: "200 — KENG VA YORUG‘ ZAL MAYDONI" -> "200 m²".
+  - Unified operating schedule across landing page and modals: "Har kuni: 14:00 – 00:00".
+  - Standardized visible contact telephone number to `+998 91 159 85 85` while preserving `tel:+998911598585` action links.
 - [x] **Complete Purge of Mock Data**:
   - Completely purged all hardcoded mock arrays (`INITIAL_MEMBERS = []`, `INITIAL_PAYMENTS = []`, `INITIAL_PRODUCTS = []`, `INITIAL_CONTACT_MESSAGES = []`).
   - Removed all demo "Reset to mock data" buttons, modal dialogs, and reset handlers across `/admin/settings`, `/admin/website`, `AdminTopbar`, and `FitnesContext`.

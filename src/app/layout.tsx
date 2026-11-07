@@ -61,13 +61,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uz" className="dark scroll-smooth">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#090D16" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#090D16] text-slate-100 min-h-screen selection:bg-lime-500 selection:text-black`}>
         <FitnesFlowProvider>
           {children}

@@ -83,23 +83,23 @@ export const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
   stats: [
     {
       id: 'stat-1',
-      value: '1,200+',
-      label: 'Kvadrat metr maydon',
+      value: '200 m²',
+      label: 'Keng va yorug‘ zal maydoni',
     },
     {
       id: 'stat-2',
-      value: '60+',
+      value: '25+',
       label: 'Zamonaviy trenajyorlar',
     },
     {
       id: 'stat-3',
-      value: '15+',
-      label: 'Malakali murabbiylar',
+      value: '2+',
+      label: 'Professional sertifikatlangan murabbiylar',
     },
     {
       id: 'stat-4',
-      value: '07:00 – 23:00',
-      label: 'Haftasiga 7 kun ochiq',
+      value: '14:00 – 00:00',
+      label: 'Har kuni ochiq',
     },
   ],
   features: [
@@ -148,12 +148,12 @@ export const INITIAL_WEBSITE_CONTENT: WebsiteContent = {
     imageUrl: '/images/about/coach-training.webp',
   },
   contact: {
-    phone: '+998 (90) 123-45-67',
+    phone: '+998 91 159 85 85',
     email: 'info@powerzone.uz',
     address: 'Farg‘ona viloyati, Quva tumani, Akbarobod markazi',
     landmark: 'Akbarobod markazi, asosiy yo‘l bo‘yida',
-    workingHoursWeekdays: '07:00 – 23:00',
-    workingHoursSunday: '08:00 – 22:00',
+    workingHoursWeekdays: '14:00 – 00:00',
+    workingHoursSunday: '14:00 – 00:00',
     telegramChannel: 'https://t.me/powerzone_quva',
     telegramAdmin: 'https://t.me/powerzone_admin',
     instagram: 'https://instagram.com/powerzone_quva',

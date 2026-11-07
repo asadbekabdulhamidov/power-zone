@@ -17,6 +17,8 @@ function ProductCardImage({
   const [errorCount, setErrorCount] = useState(0);
 
   const fallbackUrls: Record<string, string> = {
+    sports_nutrition:
+      'https://images.unsplash.com/photo-1579722821273-0f6c7d44362f?auto=format&fit=crop&w=600&q=80',
     water:
       'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80',
     vitamins:
@@ -41,6 +43,8 @@ function ProductCardImage({
       switch (category) {
         case 'water':
           return <Droplets className="w-7 h-7 text-sky-400" />;
+        case 'sports_nutrition':
+          return <Sparkles className="w-7 h-7 text-lime-400" />;
         case 'vitamins':
           return <Sparkles className="w-7 h-7 text-amber-400" />;
         case 'accessories':
@@ -81,10 +85,53 @@ export function LandingProductsShowcase() {
   // Display ACTIVE products only!
   const activeProducts = products.filter((p) => p.isActive);
 
+  // Dynamic category tabs check
+  const hasSportOzuqalari = activeProducts.some(
+    (p) => p.category === 'sports_nutrition' || p.categoryLabel === 'Sport ozuqalari'
+  );
+  const hasWater = activeProducts.some(
+    (p) => p.category === 'water' || p.categoryLabel === 'Suv'
+  );
+  const hasSportsDrinks = activeProducts.some(
+    (p) => p.category === 'sports_drinks' || p.categoryLabel === 'Sport ichimliklari'
+  );
+  const hasVitamins = activeProducts.some(
+    (p) => (p.category === 'vitamins' || p.categoryLabel === 'Vitaminlar') && p.categoryLabel !== 'Sport ozuqalari'
+  );
+  const hasAccessories = activeProducts.some(
+    (p) => p.category === 'accessories' || p.categoryLabel === 'Aksessuarlar'
+  );
+
+  const categoryTabs = [
+    { id: 'all', label: 'Barchasi' },
+    ...(hasSportOzuqalari ? [{ id: 'sports_nutrition', label: 'Sport ozuqalari' }] : []),
+    ...(hasWater ? [{ id: 'water', label: 'Suv' }] : []),
+    ...(hasSportsDrinks ? [{ id: 'sports_drinks', label: 'Sport ichimliklari' }] : []),
+    ...(hasVitamins ? [{ id: 'vitamins', label: 'Vitaminlar' }] : []),
+    ...(hasAccessories ? [{ id: 'accessories', label: 'Aksessuarlar' }] : []),
+  ];
+
   const filteredProducts =
     selectedCategory === 'all'
       ? activeProducts
-      : activeProducts.filter((p) => p.category === selectedCategory);
+      : activeProducts.filter((p) => {
+          if (selectedCategory === 'sports_nutrition') {
+            return p.category === 'sports_nutrition' || p.categoryLabel === 'Sport ozuqalari';
+          }
+          if (selectedCategory === 'vitamins') {
+            return (p.category === 'vitamins' || p.categoryLabel === 'Vitaminlar') && p.categoryLabel !== 'Sport ozuqalari';
+          }
+          if (selectedCategory === 'water') {
+            return p.category === 'water' || p.categoryLabel === 'Suv';
+          }
+          if (selectedCategory === 'sports_drinks') {
+            return p.category === 'sports_drinks' || p.categoryLabel === 'Sport ichimliklari';
+          }
+          if (selectedCategory === 'accessories') {
+            return p.category === 'accessories' || p.categoryLabel === 'Aksessuarlar';
+          }
+          return p.category === selectedCategory;
+        });
 
   const handleBuyClick = (productName: string) => {
     showToast(
@@ -113,13 +160,7 @@ export function LandingProductsShowcase() {
 
           {/* Category Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {[
-              { id: 'all', label: 'Barchasi' },
-              { id: 'water', label: 'Suv' },
-              { id: 'vitamins', label: 'Vitaminlar' },
-              { id: 'sports_drinks', label: 'Sport ichimliklari' },
-              { id: 'accessories', label: 'Aksessuarlar' },
-            ].map((cat) => (
+            {categoryTabs.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}

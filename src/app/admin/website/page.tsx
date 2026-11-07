@@ -319,7 +319,7 @@ export default function WebsiteAdminPage() {
         })}
       </div>
 
-      {/* TAB 1: HERO BO'LIMI */}
+      {/* TAB 1: HERO BO‘LIMI */}
       {activeTab === 'hero' && (
         <Card className="border-zinc-800 bg-[#111827]/80">
           <CardHeader className="p-6 pb-4 border-b border-zinc-800">

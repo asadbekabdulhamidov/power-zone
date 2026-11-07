@@ -7,13 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format currency amount into Uzbek Sum (UZS)
- * e.g. 200000 -> "200,000 UZS" or "200 000 so'm"
+ * Deterministic formatting using standard space delimiter to prevent SSR hydration mismatches (#418)
+ * e.g. 200000 -> "200 000 UZS" or "200 000 so'm"
  */
 export function formatUZS(amount: number | string | '' | null | undefined, suffix: 'UZS' | "so'm" = 'UZS'): string {
   if (amount === '' || amount === null || amount === undefined) return `0 ${suffix}`;
   const num = typeof amount === 'string' ? Number(amount) : amount;
   if (isNaN(num)) return `0 ${suffix}`;
-  const formatted = new Intl.NumberFormat('uz-UZ').format(Math.round(num));
+  const formatted = Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return `${formatted} ${suffix}`;
 }
 
@@ -98,6 +99,17 @@ export function formatPhoneNumber(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.startsWith('998') && cleaned.length === 12) {
     return `+998 (${cleaned.slice(3, 5)}) ${cleaned.slice(5, 8)}-${cleaned.slice(8, 10)}-${cleaned.slice(10, 12)}`;
+  }
+  return phone;
+}
+
+/**
+ * Format phone for clean standard display (+998 91 159 85 85)
+ */
+export function formatDisplayPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('998') && digits.length === 12) {
+    return `+998 ${digits.slice(3, 5)} ${digits.slice(5, 8)} ${digits.slice(8, 10)} ${digits.slice(10, 12)}`;
   }
   return phone;
 }

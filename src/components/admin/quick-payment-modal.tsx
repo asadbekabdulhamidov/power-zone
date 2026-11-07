@@ -442,7 +442,7 @@ export function QuickPaymentModal({
               min={0}
               step={5000}
               required
-              helperText={`So'mda: ${formatUZS(amount)}`}
+              helperText={`So‘mda: ${formatUZS(amount)}`}
             />
 
             {/* Quick helper buttons */}

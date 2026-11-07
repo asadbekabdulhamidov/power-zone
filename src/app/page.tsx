@@ -12,7 +12,7 @@ import { LandingFooter } from '@/components/landing/footer';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col selection:bg-lime-500 selection:text-zinc-950">
+    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col selection:bg-lime-500 selection:text-zinc-950 overflow-x-hidden">
       {/* Sticky Navigation */}
       <LandingNavbar />
 

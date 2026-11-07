@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MembershipPlan } from '@/types';
-import { formatUZS } from '@/lib/utils';
+import { formatUZS, formatDisplayPhone } from '@/lib/utils';
 import { useFitnesFlow } from '@/context/fitnes-context';
 import {
   CheckCircle2,
@@ -146,7 +146,7 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
                 <span>Ish vaqti:</span>
               </span>
               <span className="text-zinc-200 font-medium">
-                {websiteContent.contact.workingHoursWeekdays} (Har kuni)
+                Har kuni: 14:00 – 00:00
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -155,10 +155,10 @@ export function JoinModal({ isOpen, onClose, plan }: JoinModalProps) {
                 <span>Qabulxona (Admin):</span>
               </span>
               <a
-                href={`tel:${websiteContent.contact.phone.replace(/[^0-9+]/g, '')}`}
+                href={`tel:${websiteContent.contact.phone?.replace(/[^0-9+]/g, '') || '+998911598585'}`}
                 className="text-lime-400 font-bold hover:underline"
               >
-                {websiteContent.contact.phone}
+                {formatDisplayPhone(websiteContent.contact.phone || '+998 91 159 85 85')}
               </a>
             </div>
           </div>

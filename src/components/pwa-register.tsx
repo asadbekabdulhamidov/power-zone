@@ -13,6 +13,7 @@ export function PwaRegister() {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin');
 
+  const [mounted, setMounted] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -21,6 +22,7 @@ export function PwaRegister() {
   const [deviceType, setDeviceType] = useState<'android' | 'windows' | 'other'>('other');
 
   useEffect(() => {
+    setMounted(true);
     // 1. Service Worker registratsiyasi (faqat brauzer muhitida)
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -113,7 +115,7 @@ export function PwaRegister() {
 
   // MUHIM QOIDA: Agar foydalanuvchi oddiy mijoz saytida bo'lsa (/), HECH QACHON o'rnatish oynasi chiqmaydi!
   // O'rnatish taklifi FAQAT Admin qismida (/admin yoki /admin/login) chiqadi.
-  if (!isAdminRoute) {
+  if (!mounted || !isAdminRoute) {
     return null;
   }
 

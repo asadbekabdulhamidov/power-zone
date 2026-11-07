@@ -516,7 +516,7 @@ export default function MembershipsPage() {
                 onChange={(e) => setEditPrice(parseNumericInput(e.target.value))}
                 min={0}
                 required
-                helperText={`So'mda: ${formatUZS(editPrice)}`}
+                helperText={`So‘mda: ${formatUZS(editPrice)}`}
               />
 
               <Input
